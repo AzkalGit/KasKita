@@ -1,0 +1,65 @@
+CATATAN TEKNIS PROYEK KAS KITA
+BUKAN CHEATSHEET PRESENTASI
+Versi: Implementasi fondasi awal setelah Tahap 2 disetujui
+
+SUMBER ACUAN
+- Proyek dasar: ZIP kaskita-tahap2.zip yang dikonfirmasi user sebagai versi terbaru.
+- Desain Tahap 2 dipertahankan; perubahan dibangun pada file yang ada.
+- KAS-Kita-static-demo.zip bukan acuan desain.
+
+IMPLEMENTASI PADA VERSI INI
+1. Akun tidak lagi harus memilih nama organisasi saat mendaftar.
+2. Satu akun memiliki daftar keanggotaan, dan peran ditentukan per organisasi.
+3. Membuat organisasi baru otomatis memberi pembuat peran Admin.
+4. Bergabung dengan kode undangan memberi peran Anggota.
+5. Admin bisa mengubah Anggota menjadi Editor dan mengembalikannya menjadi Anggota.
+6. Admin dapat membuat/verifikasi tagihan, mengatur anggota/pengaturan, dan menghapus transaksi.
+7. Editor dapat membuat/mengubah transaksi dan membaca laporan, tetapi tidak menghapus transaksi atau mengelola tagihan/pengaturan/peran.
+8. Anggota diarahkan ke halaman iuran dan hanya melihat tagihan akun sendiri.
+9. Owner/Dev memiliki panel terpisah yang menampilkan metadata organisasi, jumlah anggota, status aktif/nonaktif, dan tombol reset demo. Panel tidak menampilkan saldo, transaksi, bukti pembayaran, atau detail tagihan.
+10. Organisasi yang dinonaktifkan tidak bisa dibuka anggota; datanya tidak dihapus dan dapat diaktifkan kembali Owner/Dev.
+11. Disediakan satu organisasi demo dengan profil Admin, Editor, dan Anggota; transaksi, tagihan lunas/belum bayar/menunggu verifikasi, bukti transfer fiktif, serta transaksi otomatis yang tertaut ke tagihan lunas.
+12. Reset data demo berada di panel Owner/Dev.
+13. Migrasi awal mencoba memetakan Bendahara lama menjadi Admin dan mempertahankan data organisasi/transaksi lama dengan kunci ID organisasi baru.
+
+AKUN DEMO
+Kata sandi semua akun demo: KitaDemo2026!
+- Owner/Dev: owner@kaskita.demo
+- Admin: admin@kaskita.demo
+- Editor: editor@kaskita.demo
+- Anggota: anggota@kaskita.demo
+
+ORGANISASI DEMO
+- Nama: BEM Fakultas Teknologi
+- Kode undangan: BEM26KAS
+- Semua data organisasi dan bukti pembayaran demo bersifat fiktif.
+
+FILE YANG DITAMBAHKAN
+- organisasi.html: memilih/membuat organisasi dan bergabung melalui kode undangan.
+- owner.html: panel Owner/Dev berbasis metadata.
+- KASKITA-STATUS.txt: catatan teknis agar konteks proyek bisa dipindahkan ke chat lain.
+
+FILE UTAMA YANG DIUBAH
+- js/kaskita.js: fondasi akun, migrasi, keanggotaan/peran, data demo, alur organisasi dan Owner/Dev.
+- login.html, register.html, anggota.html, index.html: alur akses dan tampilan dasar yang diperlukan.
+- css/kaskita.css: tambahan gaya untuk kartu demo, organisasi, kode undangan, dan pemilihan peran.
+
+PEMERIKSAAN YANG SUDAH DILAKUKAN
+- node --check pada js/kaskita.js: lulus.
+- Pemeriksaan statis 11 halaman HTML, duplikasi ID, dan referensi file lokal: lulus.
+- Simulasi runtime dengan DOM tiruan untuk halaman/peran utama: lulus untuk inisialisasi.
+- Simulasi login demo, pendaftaran tanpa organisasi, buat organisasi (pembuat Admin), gabung kode undangan (Anggota), perubahan peran, tampilan transaksi Editor, tampilan iuran pribadi Anggota, panel metadata Owner/Dev, reset data demo, serta migrasi akun lama: lulus pada simulasi.
+
+BATASAN YANG BELUM SELESAI
+- Pengujian visual dan klik langsung pada browser nyata belum dilakukan di lingkungan pengembangan ini. User perlu memeriksa hasil di browser dan memberi umpan balik sebelum dianggap siap presentasi.
+- HTML/CSS/JavaScript dan localStorage adalah prototipe statis. Kata sandi masih disimpan di browser dan pemeriksaan peran bukan keamanan server; jangan dipakai sebagai aplikasi produksi.
+- Data tidak tersinkron antar perangkat/browser.
+- Laporan mingguan dan ekspor PDF sengaja belum dikerjakan; prioritas awal adalah mekanik inti.
+- Cheatsheet presentasi WhatsApp belum dibuat. Cheatsheet harus disusun setelah web diuji dan stabil.
+
+SARAN LANGKAH SELANJUTNYA
+1. Buka web dan coba empat profil demo.
+2. Periksa apakah perubahan tetap cocok dengan desain Tahap 2.
+3. Uji kode undangan, promosi Editor, verifikasi iuran, konsistensi transaksi/laporan, dan reset demo.
+4. Catat masalah yang terlihat sebelum membuat perubahan lanjutan.
+5. Jangan menggabungkan file dari versi ZIP berbeda tanpa membandingkan perubahan terlebih dahulu.

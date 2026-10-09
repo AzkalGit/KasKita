@@ -101,3 +101,22 @@ dialog img[src=""]{display:none}
 
 @media print{.aksi,.badge,.toast,.notif{display:none!important}}
 @media(max-width:900px){.grid2.sama{grid-template-columns:1fr}}
+
+/* --- Fondasi akun, organisasi, dan panel Owner/Dev --- */
+.demo-accounts{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#f8fbfa;color:var(--ink);font-size:12px;line-height:1.8;overflow-wrap:anywhere}
+.demo-accounts strong,.demo-accounts small,.demo-accounts code{display:block}
+.demo-accounts small{color:var(--mute);margin-top:2px}
+.demo-accounts code{margin:4px 0 8px;padding:5px 8px;background:#e3f4f2;border-radius:6px;font-weight:800;color:var(--deep)}
+.demo-accounts b{font-weight:700}
+.org-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.org-row:last-child{border-bottom:0}
+.org-mark{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:var(--soft);color:var(--deep);display:grid;place-items:center;font-weight:800}
+.org-details{flex:1;min-width:0}
+.org-details>strong{display:block;overflow-wrap:anywhere}
+.org-details small{display:block;color:var(--mute);margin-top:4px}
+.org-details .st{margin-top:6px}
+.invite-card{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}
+.invite-card h3{margin-bottom:6px}
+.invite-code{display:inline-block;margin-top:4px;padding:8px 13px;border-radius:9px;letter-spacing:2px;font-size:20px;background:var(--soft);color:var(--deep)}
+.role-select{padding:6px 8px;max-width:130px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+@media(max-width:600px){.org-row{align-items:flex-start;flex-wrap:wrap}.org-row .btn{margin-left:54px}.invite-card{align-items:flex-start;flex-direction:column}.invite-card .btn{width:100%}.demo-accounts{font-size:11px}}
