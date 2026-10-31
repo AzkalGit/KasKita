@@ -1,0 +1,59 @@
+Mulai dari sini
+Tahap 1 — Analisis dan desain database
+
+Kita tentukan tabel, kolom, tipe data, relasi, foreign key, dan aturan unik.
+
+Hasilnya:
+- ERD (Entity Relationship Diagram).
+- Daftar tabel dan kolom.
+- Relasi antartabel.
+- Aturan integritas data.
+
+
+
+Tahap 2 — Migration dan Model
+
+Membuat struktur database Laravel berdasarkan desain yang sudah disepakati.
+
+Model utama:
+- User
+- Organization
+- OrganizationMember
+- Category
+- Transaction
+- Invoice
+- Invitation
+- ActivityLog
+- PeriodClosure
+Sekalian definisikan relasi Eloquent.
+
+
+
+Tahap 3 — Autentikasi dan sistem akses
+- Login dan registrasi.
+- Middleware.
+- Policy.
+- Pemilihan organisasi aktif.
+- Pemeriksaan role Admin, Editor, dan Anggota.
+
+
+
+Tahap 4 — Controller dan logika bisnis
+
+Kita mulai membuat controller sesuai modul, bukan satu controller besar untuk semuanya.
+
+Contohnya OrganizationController, TransactionController, dan InvoiceController.
+
+
+
+Tahap 5 — View (Blade)
+
+Baru menghubungkan tampilan HTML/CSS prototipe dengan data Laravel.
+
+Tampilan yang dibuat mengikuti halaman asli KasKita, bukan desain baru yang tidak sesuai.
+
+
+
+Tahap 6 — Pengujian dan penyempurnaan
+
+Uji setiap role, perpindahan organisasi, pembayaran iuran, transaksi otomatis, saldo, laporan, dan keamanan data.
