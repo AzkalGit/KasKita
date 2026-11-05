@@ -48,6 +48,15 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        // Admin tunggal sebuah organisasi tidak boleh menghapus akunnya, supaya organisasi tidak tanpa pengelola
+        $tunggal = $user->organizationsWhereSoleAdmin();
+        if ($tunggal->isNotEmpty()) {
+            return back()->withErrors([
+                'password' => 'Kamu satu-satunya Admin di '.$tunggal->pluck('name')->join(', ', ' dan ').
+                    ', jadi akun belum bisa dihapus. Serahkan peran Admin ke orang lain atau hapus organisasinya lebih dulu.',
+            ], 'userDeletion');
+        }
+
         Auth::logout();
 
         $user->delete();

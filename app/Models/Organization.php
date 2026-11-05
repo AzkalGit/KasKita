@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Organization extends Model
 {
@@ -53,6 +54,22 @@ class Organization extends Model
     public function periodClosures(): HasMany
     {
         return $this->hasMany(PeriodClosure::class);
+    }
+
+    /**
+     * Hapus organisasi beserta seluruh datanya.
+     *
+     * Urutannya penting karena foreign key sengaja memakai restrictOnDelete:
+     * transaksi menunjuk ke tagihan, dan tagihan menunjuk ke anggota. Tanpa urutan ini,
+     * $organization->delete() gagal bila organisasi sudah punya tagihan.
+     */
+    public function purge(): void
+    {
+        DB::transaction(function () {
+            $this->transactions()->withTrashed()->forceDelete();
+            Invoice::whereIn('member_id', $this->members()->select('id'))->delete();
+            $this->delete(); // anggota, kategori, undangan, penutupan buku ikut terhapus (cascade)
+        });
     }
 
     public function isActive(): bool

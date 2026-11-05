@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
             $table->char('period', 7);                     // 'YYYY-MM'
-            $table->foreignId('closed_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('closed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('closed_at');
 
             $table->unique(['organization_id', 'period']);

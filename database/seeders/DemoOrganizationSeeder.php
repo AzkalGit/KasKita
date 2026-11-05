@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Invitation;
 use App\Models\Invoice;
 use App\Models\Organization;
-use App\Models\OrganizationMember;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -20,9 +19,9 @@ class DemoOrganizationSeeder extends Seeder
     {
         DB::transaction(function () {
             // --- Akun demo ---
-            $nadia = User::create(['name' => 'Nadia Putri', 'email' => 'admin@kaskita.demo', 'password' => self::PASSWORD]);
-            $rafi = User::create(['name' => 'Rafi Pratama', 'email' => 'editor@kaskita.demo', 'password' => self::PASSWORD]);
-            $dimas = User::create(['name' => 'Dimas Saputra', 'email' => 'anggota@kaskita.demo', 'password' => self::PASSWORD]);
+            $nadia = User::forceCreate(['name' => 'Nadia Putri', 'email' => 'admin@kaskita.demo', 'password' => self::PASSWORD, 'email_verified_at' => now()]);
+            $rafi = User::forceCreate(['name' => 'Rafi Pratama', 'email' => 'editor@kaskita.demo', 'password' => self::PASSWORD, 'email_verified_at' => now()]);
+            $dimas = User::forceCreate(['name' => 'Dimas Saputra', 'email' => 'anggota@kaskita.demo', 'password' => self::PASSWORD, 'email_verified_at' => now()]);
 
             // --- Organisasi ---
             $org = Organization::create([

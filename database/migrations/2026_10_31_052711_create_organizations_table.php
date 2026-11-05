@@ -18,7 +18,7 @@ return new class extends Migration
             $table->bigInteger('opening_balance')->default(0); // rupiah
             $table->bigInteger('default_dues')->default(0);
             $table->text('payment_info')->nullable();
-            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained()->restrictOnDelete();
             $table->foreignId('invoice_id')->nullable()->unique()
                 ->constrained()->restrictOnDelete();       // terisi = transaksi otomatis, terkunci
-            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('type', 10);                      // masuk | keluar
             $table->bigInteger('amount');                    // rupiah
             $table->date('tanggal');

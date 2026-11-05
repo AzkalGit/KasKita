@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('code', 20)->unique();
             $table->timestamp('expires_at')->nullable();   // kosong = tidak kedaluwarsa
             $table->timestamp('closed_at')->nullable();    // terisi = kode ditutup
-            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('created_at')->nullable();
         });
     }
