@@ -58,4 +58,15 @@ class OrganizationMember extends Model
     {
         return $this->user_id !== null;
     }
+
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_EDITOR = 'editor';
+
+    public const ROLE_ANGGOTA = 'anggota';
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
 }

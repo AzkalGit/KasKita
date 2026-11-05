@@ -163,11 +163,17 @@ Diverifikasi dengan menjalankan kode, bukan hanya membaca.
 
 **Kekurangan kecil**
 
-8. Kunci lama (`kaskitaOrg:<slug>`, `kaskitaData:<email>`) dan field lama pada akun (`org`, `peran`) tidak dibersihkan setelah migrasi.
+8. Kunci lama (`kaskitaOrg:<slug>`, `kaskitaData:<email>`) dan field lama pada akun (`org`, `peran`) tidak dibersihkan setelah migrasi. 
 9. `register.html` masih menampilkan "Rp 4.280.000" yang tertulis tetap sebagai hiasan.
 10. `kaskitaPeriode` dibagi lintas akun dan organisasi.
 11. Pembatasan peran hanya di browser; kata sandi polos. Ini batasan prototipe, bukan bug, dan baru teratasi di Laravel.
 12. Tidak ada tes otomatis di repo.
+
+## pembaruan
+
+8. : D2 diputuskan: Anggota boleh melihat saldo, total pemasukan, pengeluaran, dan transaksi terbaru, hanya lihat.
+12. : Langkah E: tambahkan catatan “keterangan transaksi otomatis iuran tanpa nama anggota”.
+11. 9. : dan kepala berkas: seperti yang kusebut di jawaban sebelumnya (entri Langkah A, hapus butir 1 di bagian 9, tes 66).
 
 ## 9. Panduan migrasi ke Laravel (usulan, belum diimplementasikan)
 
