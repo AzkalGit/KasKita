@@ -1,244 +1,289 @@
-# CLAUDE.md — KasKita
+# CLAUDE.md — KasKita (Laravel)
 
-Panduan untuk Claude (dan siapa pun) yang melanjutkan proyek ini. Baca seluruhnya sebelum mengubah kode.
+> Dokumen serah-terima antar sesi Claude. **Perbarui di setiap kemajuan** (bagian 2, 9, 11, 12 wajib).
+> Terakhir diperbarui: **6 Nov 2026** · Tes: **81 lulus, 556 assertion** (dijalankan pemilik di repo asli) · Bentuk proyek: Laravel 13 + Breeze (Blade).
 
-Disusun dari pembacaan seluruh kode pada commit `4a99c24` (9 Okt 2026), ditambah pengujian perilaku dengan simulasi DOM (jsdom). Belum pernah diuji di browser sungguhan.
+## 0. Cara kerja dua Claude (baca dulu)
 
-## 1. Ringkasan
+Pemilik proyek memakai **dua sesi Claude** karena batas pemakaian:
 
-- **Apa:** aplikasi kas organisasi. Satu akun bisa ikut banyak organisasi; peran (Admin, Editor, Anggota) ditentukan **per organisasi**; Owner/Dev adalah peran **level platform**.
-- **Sekarang:** prototipe statis (HTML + CSS + satu `js/kaskita.js`), data di `localStorage`. Tujuannya menguji desain dan alur.
-- **Berikutnya:** diimplementasikan di **Laravel** (dijalankan lokal lewat Laragon, database MySQL). Konsep sudah ditentukan; yang tersisa adalah implementasi. Lihat bagian 9.
-- **Bahasa:** semua teks antarmuka dan komentar kode dalam **Bahasa Indonesia**. Balas pengguna dalam Bahasa Indonesia.
-- **Sumber kebenaran:** kode di repo ini. `KASKITA-STATUS.txt` adalah catatan sesi sebelumnya. Jika keduanya berbeda, kode yang benar. **Jangan menggabungkan file dari ZIP/versi berbeda tanpa membandingkan perubahan lebih dulu.**
+- **Claude Pembuat** menulis/mengubah file, menjalankan tes, dan menyerahkan hasil sebagai zip.
+- **Claude Pemandu** memandu pemilik saat Pembuat kena batas: menjelaskan langkah, mengarahkan ke "Langkah berikutnya" (bagian 12), dan membantu men-debug dari output yang ditempel pemilik. Pemandu **tidak boleh mengarang isi file yang belum dilihat**; minta pemilik menempel file atau pesan galatnya.
 
-## 2. Struktur berkas
+Aturan bersama:
 
-```
-index.html          pengalihan ke login.html
-login.html          masuk (memuat daftar akun demo)
-register.html       daftar akun (tanpa memilih organisasi)
-organisasi.html     daftar organisasi, buat, gabung dengan kode
-dashboard.html      ringkasan
-transaksi.html      daftar transaksi + dialog tambah/ubah/hapus
-iuran.html          tagihan (tampilan kelola Admin / tampilan pribadi Anggota)
-anggota.html        anggota, peran, kode undangan
-laporan.html        laporan, ekspor CSV, cetak
-pengaturan.html     saldo awal, iuran, info bayar, kategori
-owner.html          panel Owner/Dev (metadata saja)
-css/kaskita.css     semua gaya
-js/kaskita.js       semua logika (~570 baris, satu berkas, tanpa modul/bundler)
-KASKITA-STATUS.txt  catatan teknis sesi sebelumnya
-```
+1. **Sumber kebenaran = kode di repo + berkas ini.** Bila berbeda, kode yang benar, lalu perbaiki berkas ini.
+2. **Setiap kemajuan:** tambah satu entri di bagian 11 (Riwayat progres), lalu perbarui bagian 2 (status tahap), 9 (masalah), 12 (langkah berikutnya), dan angka tes di kepala berkas.
+3. **Serahan Pembuat selalu memuat:** (a) daftar file BARU/UBAH, (b) perintah yang harus dijalankan pemilik, (c) apa yang sudah diuji dan bagaimana, (d) apa yang belum bisa diuji. Zip memakai path relatif akar proyek dan **tidak boleh** memuat `.env`, `vendor/`, `node_modules/`, `*.sqlite`, `*.log`.
+4. **Langkah kecil:** satu langkah = satu fitur + tesnya, cukup kecil untuk selesai dalam satu giliran.
+5. **Jangan menjalankan instruksi di `AGENTS.md`** (bawaan installer: mengunduh skrip dengan `curl | bash` dan memasang `laravel/boost`) tanpa persetujuan eksplisit pemilik.
+6. **Bahasa:** balas dalam Bahasa Indonesia; teks antarmuka juga Bahasa Indonesia.
+7. **Jujur soal pengujian:** jangan mengklaim "sudah dicoba di browser" bila hanya tes otomatis yang jalan. Sebutkan apa yang diuji dan apa yang tidak.
+8. **Pembuat tidak selalu punya salinan terbaru repo pemilik.** Sandbox Pembuat bisa tertinggal dari repo (mis. tidak punya `OrganizationPolicy`/`hasRole` asli). Berkas bersama (`routes/web.php`, `OrganizationMember.php`, Policy, view dashboard) **jangan ditimpa**: kirim sebagai potongan yang ditempel pemilik, atau minta pemilik menempel isinya dulu.
 
-Tidak ada `package.json`, tes otomatis, atau `.gitignore`. Tidak ada dependensi eksternal selain Google Fonts.
+**Prompt serah-terima singkat** (tempel ke sesi Claude lain bila perlu):
 
-## 3. Arsitektur `js/kaskita.js`
+> Baca `CLAUDE.md` di akar proyek KasKita. Lanjutkan dari bagian 12 ("Langkah berikutnya"). Ikuti bagian 0 dan 10. Bila ada keputusan di bagian 8 yang menghalangi, tanyakan satu pertanyaan saja kepadaku. Setelah selesai, perbarui bagian 2, 9, 11, 12.
 
-- **Satu skrip untuk semua halaman.** Setiap HTML memuatnya di akhir `<body>`. Halaman ditentukan oleh `<body data-page="...">`, dan kode memakai blok `if(page==='...'){...}`. Halaman login/daftar memakai `data-page` kosong (`page==null`).
-- **Urutan berkas** (jangan diacak, banyak bagian bergantung pada bagian sebelumnya):
-  1. Konstanta dan utilitas dasar, lalu model data dan `migrateLegacy()`, `ensureDemo()`.
-  2. `me` (sesi), `role`, flag `isAdmin/isEditor/isMember/isPlatformOwner`, lalu **guard akses** (`location.replace` + `throw`).
-  3. `save()`, helper data, helper tanggal/periode, utilitas tampilan.
-  4. Kerangka halaman: sidebar dibuat lewat JS dan isi `body>.content` dipindahkan ke `#main`.
-  5. Blok per halaman: dashboard, transaksi, anggota, iuran, laporan, pengaturan, organisasi, owner, login/daftar.
-- **Guard akses** memakai `throw new Error(...)` setelah `location.replace(...)` supaya sisa skrip berhenti. Peran sebenarnya dihitung dari `user.memberships` saat halaman dimuat, **bukan** dari `session.peran` (itu hanya informasi tampilan).
-- **Dialog** (`#dlgK` konfirmasi, `#dlgImg` pratinjau gambar) **diduplikasi manual di tiap HTML**; tidak ada partial. Halaman yang memanggil `konfirmasi()` atau `lihatGambar()` harus memuat dialognya sendiri.
-- **Variabel global.** Skrip memakai `const` tingkat atas (satu skrip per halaman, jadi aman di browser). `bendahara` adalah alias lama untuk `isAdmin` dan masih dipakai di beberapa tempat.
-- **Pola umum satu halaman:** `draw()` merender ulang dari `org` (objek di memori), aksi mengubah `org`, lalu `if(save()){draw();toast(...)}`.
+## 1. Ringkasan dan stack
 
-## 4. Model data (localStorage)
+- **Apa:** aplikasi kas organisasi (iuran, donasi, pengeluaran). Satu akun bisa ikut banyak organisasi; peran (Admin, Editor, Anggota) ditentukan **per organisasi**; Owner/Dev adalah peran **level platform** (`users.platform_role = 'owner'`).
+- **Stack:** Laravel 13.x (terkunci di `composer.lock`, terpasang 13.39), **PHP ≥ 8.4.1** (`composer.json` sudah `^8.4`), Breeze (Blade + Tailwind via Vite), `MAIL_MAILER=log`, `SESSION_DRIVER=database`. SQLite di memori untuk tes.
+- **Lingkungan pemilik (aktual):** **Linux Mint**, PHP 8.4, **MariaDB 10.11** (database `kaskita`, user khusus `kaskita_user`), **Node 22 lewat nvm** (Vite 8 dan Tailwind 4 menolak Node 18). Dua terminal saat mengembangkan: `npm run dev` dan `php artisan serve` (`http://127.0.0.1:8000`). **Bukan Laragon** (Laragon hanya untuk Windows; sebutan itu di catatan lama sudah usang). phpMyAdmin tidak ada; periksa database dengan `php artisan db:show`, `php artisan db:table <tabel>`, atau Tinker.
+- **Asal desain:** prototipe statis (HTML/CSS/JS, commit `4a99c24`) sudah menentukan alur dan tampilan. Laravel menerjemahkannya ke server. **View prototipe belum dimasukkan** ke proyek ini.
+- Pemilik membaca dan mengikuti serahan Claude langkah demi langkah; jelaskan perintah dengan jelas.
 
-| Kunci | Isi |
-| --- | --- |
-| `kaskitaUsers` | Array akun: `{id, nama, email, pass, platformRole, memberships:[{orgId, role}]}`. `pass` **polos**. `platformRole:'owner'` hanya untuk Owner/Dev. |
-| `kaskitaOrganizations` | "Direktori" organisasi: `{id, nama, createdAt, status:'aktif'\|'nonaktif', joinCode, creatorId}`. Digandakan di dokumen organisasi; `save()` menyinkronkannya. |
-| `kaskitaOrgId:<id>` | Dokumen satu organisasi (lihat di bawah). |
-| `kaskitaSession` | `{userId, email, nama, platformRole, currentOrgId, org, peran}`. |
-| `kaskitaPeriode` | `'semua'` atau `'YYYY-MM'`; **dibagi antar halaman, akun, dan organisasi** pada browser yang sama. |
-| `kaskitaOrg:<slug>`, `kaskitaData:<email>` | Kunci **lama** (Tahap 1–2). Hanya dibaca oleh `migrateLegacy()`; tidak dihapus setelah migrasi. |
+### Repo dan Git
 
-Dokumen organisasi (`kaskitaOrgId:<id>`):
+- Repo: `https://github.com/AzkalGit/KasKita`. Folder lokal: `~/Documents/Kuliah/sem3/SI/KasKita` (Laravel di **akar repo**).
+- Branch `main` = **prototipe statis, sengaja belum disentuh** (GitHub Pages `azkalgit.github.io/KasKita/` menyajikannya; mengganti `main` dengan Laravel akan merusak situs itu). Seluruh pekerjaan Laravel ada di branch **`fitur/laravel-fondasi`**. Gabung ke `main` lewat Pull Request nanti, setelah dipertimbangkan soal GitHub Pages.
+- Prototipe lama dipindah ke `prototipe-statis/` (termasuk `KASKITA-STATUS.txt`); catatan tahap ada di `docs/TAHAP.txt`.
+- Commit penting: `89b8cd9` (migration, model, seeder, struktur), `f134c83` (Breeze). Perbaikan zip 3 Nov dan Langkah A dikomit oleh pemilik di branch yang sama.
 
-```
-{ id, nama, createdAt, status, joinCode, creatorId,
-  saldoAwal, iuran, infoBayar, kategori:[...],
-  anggota:[{id, nama, email, telp, aktif}],            // kontak yang ditagih
-  tagihan:[{id, anggotaId, bulan:'YYYY-MM', nominal,
-            status:'belum'|'menunggu'|'lunas',
-            bukti:{data,nama,tgl}|null, ditolak, tglLunas, via:'transfer'|'tunai', txId}],
-  transaksi:[{id, tgl:'YYYY-MM-DD', ket, kat, tipe:'masuk'|'keluar', jml, nota?, tagihanId?}] }
-```
-
-Konsep penting:
-
-- **Dua hal berbeda, ditautkan lewat email (tanpa huruf besar/kecil):** `org.anggota[]` adalah *kontak yang ditagih* (boleh belum punya akun), sedangkan `user.memberships[]` adalah *akses akun beserta perannya*. Anggota "punya akun" jika ada user dengan email itu yang memiliki membership di organisasi tersebut.
-- **Peran tinggal di `user.memberships[].role`:** `'admin' | 'editor' | 'anggota'`. Nilai lama `'bendahara'` dan `'member'` masih dikenali sebagai alias.
-- **Transaksi otomatis:** saat tagihan disetujui atau ditandai lunas, `setLunas()` menambah transaksi `kat:'Iuran'` dengan `tagihanId`, dan tagihan menyimpan `txId`. Transaksi bertanda `tagihanId` **tidak bisa diubah atau dihapus** dari halaman Transaksi. `batalLunas()` menghapusnya dan mengembalikan status ke `menunggu` (bila ada bukti) atau `belum`.
-- **Saldo** = `saldoAwal` + pemasukan − pengeluaran (dihitung, tidak disimpan).
-- **Kategori `Iuran` bersifat tetap** (dipakai modul iuran). Kategori yang sudah dipakai transaksi tidak bisa dihapus.
-- **Tanggal disimpan dan diproses sebagai teks** (`'YYYY-MM-DD'`, `slice(0,7)` untuk bulan) agar bebas zona waktu. Jangan diganti dengan `new Date(string)`.
-- **Uang** disimpan sebagai bilangan bulat rupiah (`Math.round`).
-- **Lampiran** gambar diperkecil lewat canvas (maks 900 px, JPEG kualitas 0,72) lalu disimpan sebagai data URL di dalam dokumen organisasi. Selain gambar ditolak.
-- **ID baris** numerik `Date.now()*1000+acak`; ID organisasi `org-<angka>` (demo: `demo-bem-fakultas`; hasil migrasi data lama: `legacy-<slug>`), ID akun `user-<angka>`.
-- **Keamanan tampilan:** semua teks pengguna lewat `esc()`; ekspor CSV memberi awalan `'` pada sel yang diawali `= + - @` (cegah injeksi rumus).
-
-## 5. Peran dan hak akses (sesuai kode saat ini)
-
-| Halaman / aksi | Owner/Dev | Admin | Editor | Anggota |
-| --- | :-: | :-: | :-: | :-: |
-| `owner.html` | ya | – | – | – |
-| `organisasi.html` | dialihkan ke owner | ya | ya | ya |
-| dashboard, transaksi (lihat) | – | ya | ya | dialihkan ke iuran |
-| transaksi: catat/ubah | – | ya | ya | – |
-| transaksi: hapus | – | ya | – | – |
-| `iuran.html` kelola + verifikasi | – | ya | dialihkan ke dashboard | – |
-| `iuran.html` pribadi (upload bukti) | – | – | – | ya |
-| `anggota.html`, kode undangan | – | ya | dialihkan | dialihkan |
-| `pengaturan.html` | – | ya | dialihkan | dialihkan |
-| `laporan.html` | – | ya (+ tunggakan) | ya (tanpa tunggakan) | dialihkan |
-
-Aturan lain yang sudah diterapkan:
-
-- Owner/Dev yang membuka halaman selain `owner.html` dialihkan ke `owner.html`; tanpa membership di organisasi aktif, pengguna dialihkan ke `organisasi.html`.
-- **Organisasi nonaktif** tidak bisa dibuka (dialihkan ke `organisasi.html`) dan tidak menerima anggota baru; datanya tidak dihapus dan bisa diaktifkan lagi oleh Owner/Dev.
-- Pembuat organisasi otomatis Admin; bergabung lewat kode memberi peran Anggota.
-- Admin hanya bisa mengubah Anggota ↔ Editor lewat dropdown. Peran Admin tidak bisa diubah dan anggota ber-peran Admin tidak bisa dihapus.
-- Anggota yang punya iuran lunas tidak bisa dihapus (harus dinonaktifkan).
-- **Panel Owner/Dev hanya menampilkan metadata** (nama, tanggal dibuat, jumlah anggota, status) dan tombol aktif/nonaktif serta reset data demo. **Jangan pernah** menambahkan saldo, transaksi, tagihan, atau bukti ke panel ini.
-
-## 6. Data demo
-
-Dibuat otomatis oleh `ensureDemo()` setiap halaman dimuat (hanya jika belum ada). Kata sandi semua akun: `KitaDemo2026!`.
-
-| Peran | Email |
-| --- | --- |
-| Owner/Dev | `owner@kaskita.demo` |
-| Admin (Nadia Putri) | `admin@kaskita.demo` |
-| Editor (Rafi Pratama) | `editor@kaskita.demo` |
-| Anggota (Dimas Saputra) | `anggota@kaskita.demo` |
-
-Organisasi demo: **BEM Fakultas Teknologi**, ID `demo-bem-fakultas`, kode `BEM26KAS`. Berisi 6 transaksi (dua di antaranya otomatis dari iuran lunas) dan 4 tagihan (lunas, belum bayar, menunggu verifikasi dengan bukti SVG fiktif, lunas). "Reset data demo" (panel Owner/Dev) mengembalikan organisasi demo ke data awal dan **mengatur ulang keanggotaan tiga akun demo hanya ke organisasi demo** (keanggotaan lain milik akun-akun itu, jika ada, ikut hilang). Organisasi lain tidak disentuh.
-
-## 7. Konsep yang sudah ditentukan dan statusnya
-
-| Konsep | Status |
-| --- | --- |
-| Akun dipisah dari organisasi; daftar dulu, lalu buat atau gabung | **Ada** |
-| Satu akun banyak organisasi; peran per organisasi | **Ada** |
-| Pembuat organisasi otomatis Admin | **Ada** |
-| Gabung lewat kode undangan, peran Anggota | **Ada**, tetapi lihat bagian 8 (kode permanen, tanpa batas percobaan) |
-| Admin mengubah Anggota ↔ Editor | **Ada** |
-| Admin mempromosikan ke Admin / memindahkan kewenangan | **Belum** |
-| Keluar dari organisasi; hapus organisasi | **Belum** |
-| Owner/Dev: panel terpisah, hanya metadata, nonaktifkan organisasi | **Ada** |
-| Transaksi otomatis dari iuran lunas, terkunci | **Ada** |
-| Saldo awal, kategori dapat diatur, lampiran nota/bukti | **Ada** |
-| Filter periode bulan di dashboard dan laporan, ekspor CSV, cetak | **Ada** |
-| Laporan **per bulan dan per minggu**, bisa dipilih ulang dan diunduh | **Belum** (hanya filter bulan) |
-| Minggu dipotong di batas bulan (total mingguan = total bulanan) | **Belum** (keputusan desain, belum dikodekan) |
-| Rekap berisi saldo awal periode, pemasukan, pengeluaran, saldo akhir | **Sebagian** (saldo awal/akhir hanya total keseluruhan, belum per periode) |
-| Unduhan PDF berkop organisasi | **Belum** (hanya cetak browser) |
-| Tutup buku (bulan yang ditutup tidak bisa diedit) | **Belum** |
-| Riwayat aktivitas (siapa, apa, kapan) | **Belum** |
-| Kode undangan berbatas waktu, bisa ditutup/dibuka | **Belum** |
-| Tampilan HP yang dirancang untuk Anggota | **Belum diverifikasi** |
-
-## 8. Masalah yang diketahui dan keputusan terbuka
-
-Diverifikasi dengan menjalankan kode, bukan hanya membaca.
-
-**Bug**
-
-1. **`seed` tidak terdefinisi.** `bukaContoh()` (`kaskita.js` baris ~236) memakai `seed`, tetapi variabel itu tidak ada di berkas. Klik "Isi data contoh" pada organisasi yang masih kosong menimbulkan `ReferenceError: seed is not defined`. Tombol itu tampil di dashboard dan laporan untuk organisasi baru. Penyebab: `seed` (10 transaksi contoh) ada di commit `f3c2768` dan ikut terhapus di commit `5db9e98` (penambahan peran), sedangkan tombol dan pemanggilnya tertinggal. Perbaikan: kembalikan `seed` dari `f3c2768` (`git show f3c2768:js/kaskita.js`) atau hapus tombolnya.
-2. **Editor yang ikut ditagih iuran menemui jalan buntu.** Jika Editor punya data anggota dengan tagihan belum dibayar, dashboard menampilkan pengingat "Kamu punya N tagihan belum dibayar" yang mengarah ke `iuran.html`, padahal halaman itu menutup akses Editor. Admin dan Editor yang ikut ditagih juga tidak punya tempat mengunggah bukti (tampilan pribadi hanya untuk Anggota). Data demo tidak memicu ini karena Editor demo tidak punya tagihan.
-
-**Perbedaan dengan konsep awal; perlu keputusan pemilik proyek**
-
-3. **Hak Editor lebih sempit dari usulan awal.** Usulan awal: Editor boleh membuat tagihan dan memverifikasi iuran, dan boleh melihat daftar anggota (hanya-lihat). Kode sekarang: Editor tidak bisa membuka iuran, anggota, dan pengaturan. Kode ini mengikuti `KASKITA-STATUS.txt` butir 7. Jangan ubah salah satunya tanpa konfirmasi.
-4. **Anggota hanya melihat halaman Iuran** (tidak bisa melihat dashboard, transaksi, atau laporan). Konsep awal menyebut "anggota hanya dapat view" yang bisa dibaca lebih luas. Konfirmasikan sebelum Laravel.
-5. **Kode undangan** satu per organisasi, permanen, 6 karakter dari `Math.random()` (tanpa pengecekan duplikat antar organisasi), tidak ada tombol tutup/buka/buat ulang, dan **tidak ada batas percobaan**: 10 kode salah beruntun tidak dibatasi. Konsep awal menginginkan kode acak yang sulit ditebak, berbatas waktu, bisa ditutup, dan percobaan dibatasi.
-6. **Admin menambah anggota dengan email milik akun lain langsung membuat keanggotaan** tanpa persetujuan pemilik akun. Di Laravel sebaiknya menjadi undangan yang harus diterima.
-7. **Nama organisasi harus unik** di direktori browser ini. Di Laravel, putuskan apakah nama boleh kembar (bergabung memakai kode, jadi tidak wajib unik).
-
-**Kekurangan kecil**
-
-8. Kunci lama (`kaskitaOrg:<slug>`, `kaskitaData:<email>`) dan field lama pada akun (`org`, `peran`) tidak dibersihkan setelah migrasi. 
-9. `register.html` masih menampilkan "Rp 4.280.000" yang tertulis tetap sebagai hiasan.
-10. `kaskitaPeriode` dibagi lintas akun dan organisasi.
-11. Pembatasan peran hanya di browser; kata sandi polos. Ini batasan prototipe, bukan bug, dan baru teratasi di Laravel.
-12. Tidak ada tes otomatis di repo.
-
-## pembaruan
-
-8. : D2 diputuskan: Anggota boleh melihat saldo, total pemasukan, pengeluaran, dan transaksi terbaru, hanya lihat.
-12. : Langkah E: tambahkan catatan “keterangan transaksi otomatis iuran tanpa nama anggota”.
-11. 9. : dan kepala berkas: seperti yang kusebut di jawaban sebelumnya (entri Langkah A, hapus butir 1 di bagian 9, tes 66).
-
-## 9. Panduan migrasi ke Laravel (usulan, belum diimplementasikan)
-
-**Lingkungan:** Laragon (PHP, MySQL/MariaDB). Cek versi PHP yang dibutuhkan versi Laravel yang dipasang (versi terbaru umumnya meminta PHP 8.2+). Aktifkan HTTPS untuk alamat `.test` agar kata sandi tidak lewat tanpa enkripsi bila diakses dari perangkat lain.
-
-**Pemetaan data → tabel:**
-
-| Sekarang | Laravel |
-| --- | --- |
-| `kaskitaUsers` | `users` (`name`, `email` unik, `password` di-hash, `platform_role` nullable) |
-| `kaskitaOrganizations` + dokumen org | `organizations` (`name`, `status`, `opening_balance`, `default_dues`, `payment_info`, `created_by`) |
-| `org.anggota[]` + `user.memberships[]` | satu tabel `organization_members`: `organization_id`, `user_id` **nullable**, `name`, `email`, `phone`, `is_billable`, `role` nullable (`admin\|editor\|anggota`). Unik `(organization_id, user_id)` dan `(organization_id, email)`. |
-| `org.kategori[]` | `categories` (`organization_id`, `name`, `is_system` untuk "Iuran") |
-| `org.transaksi[]` | `transactions` (`tanggal` DATE, `type`, `amount` BIGINT rupiah, `category_id`, `invoice_id` nullable unik, `attachment_path`, `created_by`) |
-| `org.tagihan[]` | `invoices` (`member_id`, `period` bulan, `amount`, `status`, `paid_at`, `method`, `rejection_reason`, `proof_path`). Unik `(member_id, period)`. |
-| `joinCode` | `invitations` (`code` unik, `expires_at`, `closed_at`, `created_by`) + `invitation_uses` |
-| (belum ada) | `activity_logs`, `period_closures` (tutup buku) |
-
-**Aturan yang harus dipindahkan ke server (bukan hanya tampilan):**
-
-- Satu `Policy` per sumber daya dengan matriks peran di bagian 5 (setelah keputusan butir 3–4 bagian 8). Semua query dibatasi `organization_id` organisasi aktif pengguna (global scope), dan setiap aksi dicek di server.
-- Persetujuan iuran, pembatalan lunas, dan penghapusan tagihan dibungkus **transaksi database** karena menyentuh `invoices` dan `transactions` sekaligus. Satu kelas aksi per operasi (mis. `ApproveInvoice`, `RevertInvoice`).
-- Transaksi bertanda `invoice_id` tidak bisa diubah atau dihapus dari alur transaksi biasa.
-- Batas percobaan kode undangan lewat `RateLimiter`. Kode acak yang kuat, berbatas waktu, bisa ditutup; kode hanya memberi peran Anggota.
-- Aturan peran: pembuat organisasi tidak bisa diturunkan atau dikeluarkan, organisasi harus selalu punya minimal satu Admin, dan tidak ada yang bisa mengubah perannya sendiri.
-- Lampiran disimpan di disk privat (bukan data URL), divalidasi tipe dan ukuran di server, diunduh lewat route yang dicek policy.
-- Hapus transaksi hanya Admin. Pertimbangkan *soft delete* dan catatan di `activity_logs`.
-
-**Owner/Dev:** pisahkan controller dan route (`/owner/*`) yang **tidak pernah** menyentuh tabel `transactions`, `invoices`, atau lampiran, dan beri tes yang memastikannya. Perlu diakui terus terang: siapa pun yang memegang server dan database tetap bisa membaca data lewat phpMyAdmin. Yang realistis adalah tidak adanya fitur di aplikasi untuk mengintip, kata sandi ter-hash, dan panel yang hanya berisi metadata. Enkripsi ujung ke ujung tidak dipilih karena merusak laporan dan verifikasi di server.
-
-**Laporan:** tanggal tetap `DATE`; pengelompokan bulan dengan `YYYY-MM`. Minggu dalam bulan dipotong di batas bulan. Saldo awal periode = `opening_balance` + semua transaksi sebelum periode itu. PDF lewat paket seperti dompdf. Semua peran organisasi yang boleh melihat laporan boleh mengunduhnya; tunggakan per anggota hanya untuk yang berhak mengelola iuran.
-
-**Urutan yang disarankan:**
-
-1. Fondasi: autentikasi, organisasi, anggota/peran, undangan, policy, layar pilih/buat/gabung.
-2. Pindahkan fitur: transaksi, iuran, laporan, pengaturan, dengan tes untuk tiap aturan peran.
-3. Pelengkap: lampiran di server, panel Owner/Dev, riwayat aktivitas, laporan mingguan dan PDF, tutup buku.
-
-Tampilan dapat memakai Blade dari server (disarankan, sesuai rencana awal) daripada JavaScript yang memanggil API. Pertahankan kelas CSS dan struktur HTML yang ada agar desain tetap sama.
-
-## 10. Aturan kerja
-
-- **Baca dulu** berkas ini dan `KASKITA-STATUS.txt`, lalu bandingkan dengan kode sebelum menyimpulkan apa pun.
-- **Pertahankan desain.** Ubah file yang ada; jangan menyusun ulang tampilan atau menambah dependensi tanpa diminta. Tetap tanpa bundler selama masih prototipe statis.
-- **Teks antarmuka Bahasa Indonesia**, nada ramah dan jelas; pesan galat menjelaskan langkah berikutnya.
-- **Jangan menambah data keuangan ke panel Owner/Dev** (bagian 5).
-- **Jangan menyimpan atau menampilkan rahasia sungguhan.** Akun demo dan datanya fiktif dan boleh ada di repo; kunci/kata sandi nyata tidak boleh.
-- **Jangan mengklaim sudah diuji di browser** bila hanya memakai simulasi. Katakan apa yang diuji dan bagaimana.
-- **Perubahan peran/akses** harus mengikuti matriks bagian 5. Bila konsep berubah, perbarui bagian 5, bagian 7, README, dan `KASKITA-STATUS.txt` bersama-sama.
-- **Perubahan model data localStorage** harus menyertakan migrasi dari bentuk sebelumnya (lihat `migrateLegacy()`), karena pengguna menyimpan data di browser mereka.
-
-## 11. Cara memeriksa perubahan
+### Perintah penting
 
 ```bash
-node --check js/kaskita.js          # sintaks
+composer install
+cp .env.example .env && php artisan key:generate     # lalu isi DB_* (MariaDB/MySQL, pakai user khusus, bukan root)
+php artisan migrate:fresh --seed                     # MENGHAPUS isi DB lokal; migrasi lama diedit di tempat
+npm install && npm run dev                           # Node 22; atau npm run build
+php artisan test                                     # SQLite di memori, tidak menyentuh MariaDB/MySQL
+vendor/bin/pint <file yang diubah>                   # gaya kode
+php artisan route:list -v                            # lihat middleware tiap rute (tanpa -v middleware tidak tampil)
+php artisan optimize:clear                           # bila rute/view/config tampak tidak berubah
 ```
 
-Simulasi DOM (tanpa browser) yang dipakai untuk memverifikasi dokumen ini:
+Bila `composer.json` diubah, jalankan `composer update --lock` agar hash `composer.lock` sesuai.
 
-1. Pasang `jsdom` di folder sementara (`npm i jsdom`).
-2. Untuk tiap halaman: baca HTML, buang tag `<link>` dan `<script src>`, buat `new JSDOM(html, {url, runScripts:'outside-only'})`.
-3. Stub `localStorage` (dengan `length` dan `key(i)`), `HTMLDialogElement.prototype.showModal/close`, `alert`, `confirm`.
-4. Evaluasi isi `kaskita.js` di window itu setelah mengganti `const`/`let` di awal baris menjadi `var`.
-5. Isi form lalu kirim event `submit`, atau panggil `.click()`; periksa `localStorage`, isi DOM, dan galat yang tertangkap (`window.addEventListener('error', ...)`). Pengalihan halaman (`location.replace`) tidak berjalan di jsdom; guard terdeteksi dari galat yang dilempar.
+## 2. Status per tahap (mengikuti `docs/TAHAP.txt`)
 
-Ini **tidak menggantikan** uji klik di browser nyata. Tata letak, responsivitas HP, dan cetak/PDF hanya bisa dinilai di browser.
+| Tahap | Status | Catatan |
+| --- | --- | --- |
+| 1. Analisis dan desain database | **Selesai** | Skema ada di migrasi (bagian 4). ERD ditulis sebagai DBML di percakapan (dbdiagram.io); berkas ERD tidak ada di repo. Keputusan: diagram DB biasa (crow's foot), bukan Chen. |
+| 2. Migration dan Model | **Selesai** | 9 model + relasi. Empat migrasi diedit di tempat (kolom pencatat jadi `nullOnDelete`). |
+| 3. Autentikasi dan sistem akses | **Sebagian** | Ada: login/daftar/reset (Breeze), email wajib terverifikasi, middleware `org.member`, organisasi aktif lewat URL, `OrganizationPolicy` (matriks hak per peran, Langkah A). Gerbang terpasang di **dashboard dan undangan**; gerbang lain dipasang bersama tiap modul. **Belum:** Policy untuk sumber daya lain (transaksi, tagihan per baris), panel Owner. |
+| 4. Controller dan logika bisnis | **Sebagian** | Ada: `OrganizationController` (index/store/join), `OrganizationDashboardController` (show), **`InvitationController` (kelola kode, Langkah B)**, hapus akun di `ProfileController`. **Belum:** Transaction, Invoice, Member, Category, Report, Owner. `ActivityLog` baru ditulis untuk aksi undangan. |
+| 5. View (Blade) | **Sebagian** | `organizations/index` (fungsional), `organizations/dashboard` (sementara), **`invitations/index` (fungsional, gaya Breeze)**. Halaman auth/profil masih bahasa Inggris bawaan Breeze. |
+| 6. Pengujian dan penyempurnaan | **Sebagian** | 81 tes lulus. Belum menguji iuran, transaksi, laporan (modulnya belum ada). |
 
-Daftar periksa sebelum menyerahkan perubahan: sintaks lolos; tiap peran (empat profil demo) dicoba melewati halaman yang diizinkan dan ditolak; alur buat organisasi → gabung kode → ubah peran → buat tagihan → unggah bukti → setujui → transaksi otomatis muncul → batalkan; dokumen (README, bagian 5 dan 7) diperbarui bila perilaku berubah.
+## 3. Struktur dan konvensi
+
+```
+app/Http/Controllers/   OrganizationController, OrganizationDashboardController, InvitationController,
+                        ProfileController, Auth/* (Breeze)
+app/Http/Requests/      StoreInvitationRequest    (buat/ganti kode; authorize = manageInvitations)
+app/Http/Middleware/    EnsureOrganizationMember  (alias: org.member, didaftarkan di bootstrap/app.php)
+app/Listeners/          LinkPendingMemberships    (event Verified; terdeteksi otomatis)
+app/Models/             User, Organization, OrganizationMember, Category, Transaction, Invoice,
+                        Invitation, InvitationUse, ActivityLog, PeriodClosure
+app/Policies/           OrganizationPolicy        (terdeteksi otomatis untuk model Organization)
+database/migrations/    2026_10_31_* (tabel KasKita) + bawaan Laravel
+database/seeders/       OwnerSeeder, DemoOrganizationSeeder (dipanggil DatabaseSeeder)
+resources/views/        organizations/{index,dashboard}.blade.php ; invitations/index.blade.php ;
+                        dashboard.blade.php (TIDAK terpakai, boleh dihapus) ; welcome.blade.php (bawaan)
+routes/web.php          rute aplikasi ;  routes/auth.php  HANYA rute Breeze (jangan taruh rute aplikasi di sini)
+tests/Feature/          lihat bagian 7
+prototipe-statis/       prototipe HTML/CSS/JS lama (referensi tampilan)
+docs/                   TAHAP.txt
+```
+
+Konvensi:
+
+- **Nama tabel/kolom/rute/nama rute Bahasa Inggris** (`organizations.index`, `invoices`, `member_id`); **URI dan teks UI Bahasa Indonesia** (`/organisasi`, `/undangan`, "Gabung dengan kode"). Kolom `tanggal` dan `period` adalah pengecualian yang sudah ada.
+- **Satu controller per modul**; logika yang menyentuh banyak tabel dibungkus `DB::transaction`, idealnya di metode model/kelas aksi (contoh: `Organization::purge()`, `Invitation::issue()`).
+- **Uang** = bilangan bulat rupiah. **Tanggal transaksi** = kolom `date`; **periode iuran** = `char(7)` `'YYYY-MM'`.
+- **Email** disimpan huruf kecil (`OrganizationMember::email` mutator). Email kosong disimpan `NULL`.
+- **Organisasi aktif ditentukan oleh URL**, bukan session; setiap rute dalam organisasi berada di grup `org.member` dengan model binding `{organization}`. Grup itu memakai **`->scopeBindings()`**: parameter anak (mis. `{invitation}`) hanya dicari di dalam organisasi pada URL, sehingga ID milik organisasi lain menjadi 404. Pakai pola yang sama untuk sumber daya anak berikutnya (tagihan, transaksi, anggota).
+- **Otorisasi:** `Gate::authorize('<kemampuan>', $organization)` di controller dan `@can('<kemampuan>', $organization)` di view; di view bisa memakai `$currentOrganization` (dibagikan middleware). Untuk aksi yang menerima input, taruh pemeriksaan di **`FormRequest::authorize()`** (dijalankan sebelum validasi) supaya peran yang tidak berhak langsung 403, bukan melihat galat validasi. Nama kemampuan ada di `OrganizationPolicy` (bagian 6). Peran dicek lewat `OrganizationMember::hasRole()` dan konstanta `ROLE_ADMIN/ROLE_EDITOR/ROLE_ANGGOTA`.
+- **Jangan menaruh rute aplikasi di `routes/auth.php`.** Rute yang tertulis dua kali diam-diam menimpa yang pertama; `RoutingTest` menjaga ini.
+- Jalankan `vendor/bin/pint` pada file yang diubah.
+
+## 4. Skema database (aktual, dari migrasi)
+
+Tanda `?` = boleh NULL. `FK(hapus)` = aturan saat induk dihapus.
+
+| Tabel | Kolom | FK(hapus) | Unik |
+| --- | --- | --- | --- |
+| `users` | name, email, email_verified_at?, password (cast `hashed`), platform_role? (`'owner'`), remember_token | – | email |
+| `organizations` | name, status=`aktif`\|`nonaktif`, opening_balance=0, default_dues=0, payment_info?, created_by? | created_by→users (**set null**) | – |
+| `organization_members` | organization_id, user_id?, name, email?, phone?, role? (`admin`\|`editor`\|`anggota`), is_billable=1, is_active=1 | organization_id→organizations (cascade); user_id→users (**set null**) | (organization_id, email); (organization_id, user_id) |
+| `categories` | organization_id, name, is_system=0 (true untuk "Iuran") | organization_id→organizations (cascade) | (organization_id, name) |
+| `invoices` | member_id, period, amount, status=`belum`\|`menunggu`\|`lunas`, method? (`transfer`\|`tunai`), proof_path?, rejection_reason?, paid_at? | member_id→organization_members (**restrict**) | (member_id, period) |
+| `transactions` | organization_id, category_id, invoice_id?, created_by?, type (`masuk`\|`keluar`), amount, tanggal, description, attachment_path?, deleted_at? (soft delete) | organization_id (cascade); category_id (**restrict**); invoice_id→invoices (**restrict**); created_by→users (**set null**) | invoice_id |
+| `invitations` | organization_id, code, expires_at?, closed_at?, created_by? (hanya `created_at`, tanpa `updated_at`) | organization_id (cascade); created_by (**set null**) | code |
+| `invitation_uses` | invitation_id, user_id, used_at (tanpa timestamps) | invitation_id (cascade); user_id (cascade) | – |
+| `activity_logs` | organization_id?, user_id?, action, subject_type?, subject_id?, metadata? (JSON; hanya `created_at`) | organization_id (set null); user_id (set null) | – |
+| `period_closures` | organization_id, period, closed_by?, closed_at (tanpa timestamps) | organization_id (cascade); closed_by (**set null**) | (organization_id, period) |
+
+Catatan skema:
+
+- **Dua jenis "anggota" dalam satu tabel:** `user_id` terisi = anggota punya akun; `user_id` NULL = kontak yang ditagih (belum punya akun). Peran hanya bermakna bila akun ada.
+- **`is_billable` ≠ `is_active`:** `is_billable` = apakah ditagih iuran; `is_active` = apakah masih tercatat aktif (nonaktif, bukan dihapus, bila punya riwayat tagihan).
+- **`invoices` tidak punya `organization_id`**; organisasi dicapai lewat `member`. `transactions.category_id` tidak dipaksa DB untuk satu organisasi dengan transaksinya, jadi **validasi di FormRequest/controller** bahwa kategori milik organisasi yang sama.
+- Kolom `role`, `status`, `type`, `method` adalah string tanpa CHECK constraint; validasi ada di aplikasi.
+- `restrictOnDelete` pada `invoices.member_id` dan `transactions.invoice_id` **disengaja**. Karena itu `$organization->delete()` langsung gagal bila sudah ada tagihan; pakai `Organization::purge()`.
+- Owner **tidak** punya tabel sendiri: cukup `users.platform_role = 'owner'`, dan tidak punya baris di `organization_members`.
+- **Migrasi lama diedit di tempat.** Database yang dibuat sebelum 3 Nov 2026 perlu `migrate:fresh`. Langkah B **tidak** menambah migrasi.
+
+## 5. Aturan bisnis yang SUDAH ada di kode
+
+**Registrasi dan verifikasi email**
+
+- `User implements MustVerifyEmail`. Semua rute organisasi di grup `['auth','verified']`; profil hanya `auth`.
+- `/dashboard` hanya pengalihan ke `/organisasi` (nama rute `dashboard` dipertahankan karena Breeze memakainya). Login dan daftar juga mendarat di `/organisasi`.
+- Mendaftar **tidak** menautkan akun ke kontak. Penautan terjadi **setelah email terverifikasi** (`LinkPendingMemberships` → `User::linkPendingMemberships()`): hanya baris `user_id` NULL, `is_active` = true, email sama, di organisasi yang belum diikuti akun itu; `role` NULL menjadi `anggota`. (Jangan menautkan di `RegisteredUserController`: email belum terbukti milik pendaftar.)
+- Akun dihapus (`User::deleting`): keanggotaannya dinonaktifkan (`role` NULL, `is_active` false). Baris nonaktif tidak dihidupkan lagi oleh penautan maupun kode undangan.
+- Admin **tunggal** sebuah organisasi tidak bisa menghapus akunnya (`User::organizationsWhereSoleAdmin()`).
+- `platform_role` **tidak** mass-assignable; isi lewat `forceCreate`/`forceFill` (seeder). Form daftar hanya menerima name, email, password, jadi tidak ada yang bisa mendaftar sebagai Owner.
+- Verifikasi email: dengan `MAIL_MAILER=log`, **tautan verifikasi dibaca dari `storage/logs/laravel.log`**. Akun demo sudah terverifikasi.
+
+**Organisasi dan undangan**
+
+- Membuat organisasi: pembuat jadi `admin`, `is_billable=false`, kategori "Iuran" (`is_system`) dibuat, dan satu kode undangan dibuat lewat `Invitation::issue($org, Invitation::DEFAULT_DAYS, $user)`: **berlaku 7 hari** (bukan permanen lagi).
+- Gabung dengan kode: peran selalu `anggota`; kode dinormalkan (`trim`, huruf besar). **Batas percobaan:** 5 kegagalan per akun dalam 15 menit (`RateLimiter`, kunci `join-code:{user_id}`), dihapus saat berhasil. Pesan galat sama untuk kode salah, ditutup, kedaluwarsa, atau organisasi nonaktif. Ditolak bila sudah anggota, atau keanggotaannya nonaktif. Tercatat di `invitation_uses`.
+- `EnsureOrganizationMember`: harus anggota **aktif** (403) dan organisasi `aktif` (403). Menaruh `member` di request attributes serta `currentOrganization` dan `currentMember` di view.
+- **`OrganizationPolicy` (Langkah A):** satu metode per kemampuan, semuanya hanya berlaku untuk keanggotaan **aktif** (lihat matriks di bagian 6). Dashboard: saldo = `opening_balance` + pemasukan − pengeluaran (dihitung, tidak disimpan); lima transaksi terbaru.
+- `Organization::purge()`: hapus transaksi (termasuk soft-deleted) → tagihan → organisasi dalam satu transaksi DB. Belum ada rute/UI yang memanggilnya.
+
+**Kelola undangan (Langkah B)**
+
+- Rute (di grup `org.member`, `scopeBindings`): `GET /organisasi/{organization}/undangan` (`invitations.index`), `POST /undangan` (`store`), `PATCH /undangan/{invitation}/tutup` (`close`), `PATCH /undangan/{invitation}/buka` (`reopen`), `POST /undangan/{invitation}/ganti` (`regenerate`).
+- **Hanya Admin** (`manageInvitations`): `index/close/reopen` memakai `Gate::authorize`; `store/regenerate` memakai `StoreInvitationRequest::authorize()`. Editor, Anggota, dan non-anggota mendapat 403.
+- Masa berlaku dipilih dari `Invitation::DURATIONS = [1, 7, 30]` hari (`days`, wajib). Satu organisasi boleh punya **banyak kode aktif sekaligus**.
+- `Invitation::status()`: `ditutup` (menang) → `kedaluwarsa` → `aktif`. Kode yang sudah kedaluwarsa **tidak bisa dibuka lagi** (galat pada key `invitation`) dan tidak perlu ditutup. Menutup kode yang sudah tertutup atau membuka kode yang sudah aktif tidak mengubah apa pun dan tidak dicatat.
+- **Ganti kode** (`regenerate`): menutup kode lama (bila masih bisa dipakai) dan membuat kode baru dalam satu `DB::transaction`. Kode **tidak pernah dihapus**, hanya ditutup (riwayat `invitation_uses` tetap utuh).
+- Kode dibuat oleh `Invitation::generateCode()`: 8 karakter dari alfabet tanpa `0/O/1/I` (`Invitation::ALPHABET`), dipastikan belum dipakai kode lain di organisasi mana pun. Kode lama (mis. seeder `BEM26KAS`, permanen) tetap berlaku untuk gabung, termasuk bila memuat `0/O/1/I`, karena gabung hanya menormalkan huruf besar.
+- **Riwayat aktivitas:** setiap aksi tercatat di `activity_logs` (`organization_id`, `user_id`, `subject_type=Invitation`, `subject_id`) dengan `action` `invitation.created | invitation.closed | invitation.reopened | invitation.regenerated` dan `metadata` `{code, days?, replaced_code?}`. Pencatatnya saat ini metode privat `InvitationController::log()`; jadikan satu helper bersama saat Langkah C.
+- Halaman `invitations/index`: buat kode (pilih masa berlaku), tabel kode (status, berlaku sampai atau "Tanpa batas waktu", jumlah pemakaian, tombol Salin lewat Alpine, Tutup/Buka, Ganti kode), dan daftar "Bergabung lewat kode" (nama, email, kode, waktu). Waktu ditampilkan apa adanya (UTC; lihat D8).
+
+## 6. Peran dan hak akses
+
+**Matriks yang sudah diterapkan di `OrganizationPolicy`** (semua = keanggotaan aktif):
+
+| Kemampuan (nama di Policy) | Admin | Editor | Anggota | Bukan anggota |
+| --- | :-: | :-: | :-: | :-: |
+| `viewDashboard` (saldo, pemasukan, pengeluaran, transaksi terbaru) | ya | ya | **ya (D2)** | – |
+| `viewReports` | ya | ya | – | – |
+| `viewArrears` (tunggakan di laporan) | ya | – | – | – |
+| `manageTransactions` (catat/ubah) | ya | ya | – | – |
+| `deleteTransactions` | ya | – | – | – |
+| `manageInvoices` (kelola tagihan, verifikasi, lunas tunai) | ya | – | – | – |
+| `manageMembers` (anggota, ubah peran Anggota↔Editor) | ya | – | – | – |
+| `manageInvitations` (kode undangan) — **terpasang di `InvitationController`** | ya | – | – | – |
+| `manageSettings` (saldo awal, iuran, info bayar, kategori) | ya | – | – | – |
+
+Hak Anggota "lihat dan bayar tagihan **sendiri**" belum di Policy: itu aturan per baris tagihan, dibuat di Langkah E bersama `InvoicePolicy`.
+
+**Aturan peran yang disepakati (belum diterapkan, dikerjakan di Langkah C):** pembuat organisasi tidak bisa diturunkan atau dikeluarkan; organisasi harus selalu punya minimal satu Admin; tak seorang pun mengubah perannya sendiri; kode undangan hanya memberi peran Anggota (**sudah** berlaku).
+
+**Owner/Dev** harus punya controller/rute terpisah (`/owner/*`) yang **tidak pernah** menyentuh `transactions`, `invoices`, atau lampiran, dengan tes yang memastikannya. Perlu diakui terus terang: pemegang server/database tetap bisa membaca data lewat alat database; yang dijamin hanya tidak adanya fitur mengintip, kata sandi ter-hash, dan panel berisi metadata saja.
+
+## 7. Data demo dan pengujian
+
+**Seeder** (`php artisan migrate:fresh --seed`). Kata sandi semua akun: `KitaDemo2026!`; semua sudah terverifikasi.
+
+| Peran | Email | Ditagih |
+| --- | --- | :-: |
+| Owner/Dev | `owner@kaskita.demo` | – |
+| Admin (Nadia Putri) | `admin@kaskita.demo` | tidak |
+| Editor (Rafi Pratama) | `editor@kaskita.demo` | tidak |
+| Anggota (Dimas Saputra) | `anggota@kaskita.demo` | ya |
+| Kontak tanpa akun | `sinta@`, `budi@`, `citra@` `kaskita.demo` | ya |
+
+Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran standar 25.000, kode undangan `BEM26KAS` (**permanen**, sengaja untuk demo), kategori Iuran/Donasi/Konsumsi/Perlengkapan/Transportasi, 6 transaksi (3 masuk = 250.000 dengan 2 otomatis dari iuran; 3 keluar = 295.000), 4 tagihan periode 2026-10 (2 lunas, 1 menunggu, 1 belum). **Saldo dashboard = Rp 455.000.** Seeder **tidak idempotent** (pakai `migrate:fresh --seed`). Akun Owner belum punya halaman apa pun (panel Owner = Langkah G).
+
+**Tes** (`php artisan test`; **81 lulus, 556 assertion**): Auth bawaan Breeze (disesuaikan: login dan daftar mengalihkan ke `organizations.index`); `OrganizationTest` (18); `MembershipLinkingTest` (7); `AccountDeletionTest` (7); `OrganizationPurgeTest` (2); `RoutingTest` (3); `ProfileTest`; `OrganizationPolicyTest` (4); **`InvitationManagementTest` (15, Langkah B: tampilan dan status, hanya Admin untuk 5 aksi × 3 peran, verifikasi email, isolasi lintas organisasi, buat/validasi masa berlaku, tutup/buka, kedaluwarsa, ganti kode, pencatatan aktivitas, alfabet kode)**.
+
+Catatan pengujian:
+
+- Tes memakai **SQLite di memori**, sedangkan aplikasi nyata memakai **MariaDB**. Perilaku yang bisa beda (kolasi huruf besar/kecil, perubahan FK) belum diuji di MariaDB.
+- Tampilan **belum pernah dilihat Claude di browser**; pemilik sudah mencoba login, daftar, `/organisasi`, dan dashboard. Halaman `invitations/index` belum dicoba di browser oleh siapa pun; **tombol Salin memakai Alpine + `navigator.clipboard`**, yang hanya jalan di konteks aman (`localhost` / `127.0.0.1` atau HTTPS).
+- **Uji mutasi** dipakai untuk membuktikan tes bukan basa-basi: rusak aturannya sementara (hapus `Gate::authorize`, `authorize()` selalu true, hapus `scopeBindings`, izinkan membuka kode kedaluwarsa, kode awal permanen) dan pastikan tepat satu tes gagal; lalu pulihkan. Ulangi untuk aturan penting berikutnya.
+- Untuk memverifikasi middleware sebuah rute, pakai `route:list -v` dan `RoutingTest`, bukan `Route::getRoutes()` (duplikat tertimpa).
+
+## 8. Keputusan pemilik
+
+| # | Pertanyaan | Keputusan / keadaan |
+| --- | --- | --- |
+| D1 | Hak **Editor** | **Default prototipe dipakai (sempit):** catat/ubah transaksi dan baca laporan tanpa tunggakan; tanpa Iuran/Anggota/Pengaturan/Undangan. Mudah dilonggarkan di Policy. |
+| D2 | Anggota melihat dashboard? | **Diputuskan: boleh, hanya lihat.** Anggota melihat saldo, total pemasukan, total pengeluaran, dan lima transaksi terbaru. **Catatan privasi:** keterangan transaksi otomatis iuran **tidak boleh memuat nama anggota** (mis. "Iuran Oktober 2026"); tunggakan hanya terlihat Admin. Seeder saat ini masih memakai keterangan bernama ("Iuran Sinta Maharani Oktober"): ubah bersama Langkah E. |
+| D3 | Admin/Editor ikut ditagih iuran? | Laravel: pembuat organisasi `is_billable=false`; pembuat tagihan di Langkah E hanya menagih anggota `is_billable` dan aktif. Belum ada keputusan untuk Admin/Editor yang ingin ikut membayar. |
+| D4 | Admin menambah kontak dengan email akun yang sudah terverifikasi | Tidak ditautkan otomatis. Usulan: **undangan yang harus diterima** pemilik akun. |
+| D5 | Serah-terima Admin, keluar dari organisasi, hapus organisasi | Belum ada UI. Pesan hapus akun sudah menyebutnya padahal fiturnya belum ada. |
+| D6 | Nama organisasi boleh kembar? | Laravel: boleh (tidak ada aturan unik). |
+| D7 | CSS prototipe vs Tailwind Breeze untuk Tahap 5 | Belum ditentukan. Aturan pemilik: **tampilan mengikuti halaman asli KasKita**, bukan desain baru. |
+| D8 | Locale `id` dan timezone `Asia/Jakarta` | Sekarang `en` dan `UTC`. Belum diubah. |
+| D9 | Aturan kode undangan (dipilih Pembuat di Langkah B, mudah diubah) | Masa berlaku **1/7/30 hari** (`Invitation::DURATIONS`); kode awal organisasi **7 hari** (`DEFAULT_DAYS`); boleh **banyak kode aktif**; kode **ditutup, tidak dihapus**. Ubah konstanta bila pemilik ingin lain. |
+
+Bila langkah berikutnya butuh keputusan yang belum ada, **ajukan satu pertanyaan** dan tawarkan default yang aman (matriks bagian 6).
+
+## 9. Masalah yang diketahui / belum dikerjakan
+
+Urutan = prioritas kasar.
+
+1. **Gerbang Policy baru terpasang di dashboard dan undangan.** Kemampuan lain (`viewReports`, `manageTransactions`, dst.) sudah didefinisikan tetapi **belum dipakai**; pasang gerbang di tiap controller baru, dengan tes yang menolak peran yang tidak berhak.
+2. **Belum ada navigasi di dalam organisasi.** Tautan "Kelola undangan" sudah ditambahkan manual ke `organizations/dashboard.blade.php`, tetapi diletakkan **di luar kontainer halaman** (di antara `</x-slot>` dan `<div class="py-8">`), sehingga tampil tanpa lebar/jarak yang rapi. Pindahkan ke dalam `<div class="max-w-4xl ...">` bila mengganggu; menu/sidebar organisasi dibuat di Langkah H. Gaya kode `routes/web.php` (urutan `use`, indentasi grup) belum dirapikan Pint: jalankan `vendor/bin/pint routes/web.php`.
+3. **`ActivityLog` baru ditulis untuk aksi undangan.** Membuat organisasi, bergabung, dan aksi modul lain belum tercatat. Pencatat saat ini privat di `InvitationController`; jadikan helper bersama di Langkah C.
+4. **Non-anggota mendapat 403 untuk organisasi yang ada dan 404 untuk yang tidak ada**, sehingga ID organisasi bisa ditebak. Usulan: 404 untuk keduanya.
+5. **`OwnerSeeder`** membuat owner dengan kata sandi tetap dan dipanggil tanpa syarat oleh `DatabaseSeeder`: **jangan** jalankan `db:seed` di server sungguhan sebelum diberi syarat lingkungan.
+6. **Konfigurasi bawaan:** `APP_NAME=Laravel`, `APP_LOCALE=en`, timezone `UTC` (waktu di halaman Undangan tampil UTC), tidak ada folder `lang/`, halaman auth/profil Inggris, `welcome.blade.php` bawaan.
+7. **Dokumen basi:** `README.md` masih menjelaskan prototipe statis; `AGENTS.md` bawaan installer (lihat aturan 5).
+8. **Integritas lintas-organisasi** tidak dipaksa DB (kategori transaksi, anggota pada tagihan): wajib divalidasi di FormRequest. Untuk sumber daya anak di URL, `scopeBindings` sudah menutupnya (contoh: undangan).
+9. **Gabung dua kali serentak** bisa menabrak indeks unik (500) karena tidak ada penanganan balapan.
+10. **Pesan hapus akun Admin tunggal** menyuruh tindakan yang belum ada fiturnya (D5).
+11. **MariaDB belum diuji lewat tes** (hanya SQLite): terutama kolasi dan FK pada migrasi yang diedit.
+12. **Penautan email** mengandalkan email yang terverifikasi; `MAIL_MAILER=log` hanya menulis tautan ke log (cukup untuk pengembangan, tidak untuk produksi).
+13. **`OrganizationPolicy::hasRole`** melakukan satu query keanggotaan per pemeriksaan; bila halaman memanggil banyak `@can`, pertimbangkan memakai `currentMember` dari middleware atau men-cache per request.
+14. Pemilik pernah mengirim zip yang memuat `.env` (berisi `APP_KEY` dan `DB_PASSWORD`). `.gitignore` sudah benar; **jangan kirim `.env`**, dan ganti kuncinya bila pernah dibagikan.
+15. **Kode undangan demo `BEM26KAS` permanen** (seeder): sengaja untuk demo, dan tampil sebagai "Tanpa batas waktu" di halaman Undangan. Kode di organisasi sungguhan sebaiknya selalu berbatas waktu.
+
+## 10. Aturan kerja (ringkas)
+
+- Baca bagian 0, 5, 6, dan 8 sebelum mengubah apa pun. Bandingkan dengan kode.
+- Tambahkan **tes untuk setiap aturan baru**; tes lama harus tetap lulus. Tulis tes yang benar-benar gagal bila aturannya dilanggar dan **buktikan dengan uji mutasi** (rusak aturannya sementara, pastikan tes gagal, pulihkan).
+- Jangan mengubah migrasi yang sudah ada tanpa memberi tahu pemilik; bila perlu, beri tahu bahwa `migrate:fresh` dibutuhkan. Untuk perubahan skema berikutnya, pertimbangkan migrasi baru.
+- Validasi di FormRequest, otorisasi di Policy (`Gate::authorize` di controller, `authorize()` di FormRequest untuk aksi berinput), logika multi-tabel di `DB::transaction`.
+- Sumber daya di dalam organisasi lewat URL `organisasi/{organization}/...` dengan `scopeBindings`; tulis tes bahwa ID milik organisasi lain menghasilkan 404.
+- Lampiran (nota/bukti) di disk **privat** (`FILESYSTEM_DISK=local`), divalidasi tipe dan ukuran di server, diunduh lewat rute yang dicek Policy; jangan simpan sebagai data URL.
+- Teks UI Bahasa Indonesia, nada ramah dan jelas; pesan galat memberi langkah berikutnya. Jangan menampilkan data keuangan di panel Owner/Dev.
+- Jangan menyimpan rahasia nyata di repo, seeder, atau zip.
+- Tampilan mengikuti **halaman asli KasKita**, bukan desain baru.
+- Berkas bersama (`routes/web.php`, view dashboard, Policy, `OrganizationMember`): **jangan ditimpa** bila Pembuat tidak melihat versi terbaru; kirim potongan tempel atau minta isinya dulu.
+- Saat memandu pemilik: jangan tempel potongan kode yang bisa bentrok dengan berkas yang sudah ada; minta isi berkas yang relevan dulu.
+
+## 11. Riwayat progres
+
+| Tanggal | Perubahan | Tes |
+| --- | --- | --- |
+| (sebelum 3 Nov 2026) | Prototipe statis (commit `4a99c24`): alur, peran, tampilan. Tahap 1 (ERD) dan 2 (11 tabel, 9 model, relasi) di Linux Mint + MariaDB; seeder demo; struktur repo dirapikan (Laravel di akar, prototipe ke `prototipe-statis/`); Breeze dipasang (Node 22); `OrganizationController`, `EnsureOrganizationMember`, dashboard organisasi. | 1 dari 25 lulus (tes bawaan rusak) |
+| **3 Nov 2026** | **Audit + perbaikan fondasi** (`kaskita-perbaikan.zip`): `HasFactory`; `MustVerifyEmail` + penautan hanya setelah verifikasi (`LinkPendingMemberships`); email kontak huruf kecil; akun dihapus menonaktifkan keanggotaan; Admin tunggal tak bisa hapus akun; kolom pencatat `nullOnDelete`; `Organization::purge()`; halaman `/organisasi` lengkap; `/dashboard` → `/organisasi`; `composer.json` PHP `^8.4`; rute `/organisasi` ganda di `routes/auth.php` dihapus; `platform_role` tidak mass-assignable; seeder `forceCreate` + terverifikasi; Pint. | **62 lulus** |
+| **5 Nov 2026** | **Langkah A: Policy per peran.** `OrganizationMember::hasRole()` + konstanta peran; `OrganizationPolicy` (9 kemampuan, matriks bagian 6); `Gate::authorize('viewDashboard')` di `OrganizationDashboardController`; `OrganizationPolicyTest` (4 tes). **Keputusan D2:** Anggota boleh melihat dashboard (hanya lihat); **D1:** default prototipe. Pemilik memasang zip 3 Nov, `migrate:fresh --seed`, dan mencoba login/dashboard di browser. | **66 lulus** |
+| **6 Nov 2026** | **Langkah B: kelola undangan** (`kaskita-langkah-b.zip`). **Baru:** `InvitationController` (index/store/close/reopen/regenerate), `StoreInvitationRequest`, `invitations/index.blade.php`, `InvitationManagementTest` (15 tes). **Diubah:** `Invitation` (`generateCode`, `issue`, `status`, `isClosed`, `isExpired`, konstanta `ALPHABET/DURATIONS/DEFAULT_DAYS`); `OrganizationController::store` (kode awal berlaku 7 hari lewat `Invitation::issue`; `newCode()` privat dihapus). **Dipasang manual oleh pemilik (tidak ada di zip):** lima rute + `->scopeBindings()` di `routes/web.php`, dan tautan "Kelola undangan" di view dashboard organisasi (lihat `PASANG-LANGKAH-B.txt` di zip). Tanpa migrasi baru. **Verifikasi Pembuat:** di sandbox yang memakai Policy **pengganti** (matriks bagian 6) suite lulus 77 tes (tanpa 4 tes Policy milik pemilik); lima uji mutasi masing-masing menggagalkan tepat satu tes; Pint bersih. **Dikonfirmasi pemilik:** `php artisan test` di repo asli = **81 lulus (556 assertion)**; lima rute dan `->scopeBindings()` terpasang di `routes/web.php`; tautan "Kelola undangan" terpasang di view dashboard. **Belum diverifikasi:** tampilan halaman Undangan di browser, tombol Salin, MariaDB. | **81 lulus (556 assertion)** di repo pemilik |
+
+Perintah yang harus dijalankan pemilik setelah memasang serahan: ekstrak zip menimpa proyek (bila ada) → tempel potongan manual yang disebut → `composer update --lock` (bila `composer.json` berubah) → `php artisan migrate:fresh --seed` (bila migrasi berubah) → `php artisan optimize:clear` → `php artisan test`. **Pemilik melaporkan hasil `php artisan test` ke Claude; catat angka sebenarnya di bagian 11.**
+
+## 12. Langkah berikutnya (urut; satu langkah per giliran)
+
+**Langkah A — Policy dan pembatasan peran: SELESAI.** Sisa: pasang gerbang kemampuan lain saat modulnya dibuat.
+
+**Langkah B — Kelola undangan: SELESAI** (tes hijau di repo pemilik: 81 lulus). Sisa kecil: coba halaman `/organisasi/{id}/undangan` di browser (terbuka untuk Admin, 403 untuk Editor/Anggota) dan catat hasilnya di bagian 11.
+
+**Langkah C — Kelola anggota** ← *berikutnya*
+`MemberController` (gerbang `manageMembers`): daftar, tambah/ubah kontak, ubah peran Anggota↔Editor (+ promosi Admin bila D5 diputuskan), nonaktifkan/keluarkan (jangan hapus baris yang punya tagihan), keluar sendiri. Terapkan aturan peran bagian 6 (pembuat tak bisa diturunkan, minimal satu Admin, tak mengubah peran sendiri) di Policy dan tes. Jadikan pencatat `ActivityLog` satu helper bersama dan pakai juga untuk "bergabung". Rute anak memakai `scopeBindings` (anggota milik organisasi lain = 404). **Sebelum menulis kode, minta pemilik menempel** `app/Models/OrganizationMember.php`, `app/Policies/OrganizationPolicy.php`, dan `routes/web.php` versi sekarang (sandbox Pembuat tidak punya Policy/`hasRole` asli).
+
+**Langkah D — Kategori dan transaksi**
+`CategoryController`, `TransactionController` + FormRequest (kategori harus milik organisasi yang sama), gerbang `manageTransactions`/`deleteTransactions`, kunci transaksi otomatis (`invoice_id`), soft delete (hapus: Admin), lampiran privat. Tes saldo, kunci, dan penolakan Anggota.
+
+**Langkah E — Iuran**
+`InvoiceController` + `InvoicePolicy`: buat tagihan per bulan (anggota `is_billable` dan aktif, tidak dobel per periode), unggah bukti (privat), setujui/tolak/lunas tunai/batalkan dalam `DB::transaction` yang membuat/menghapus transaksi otomatis kategori "Iuran". **Keterangan transaksi otomatis tanpa nama anggota** (D2). Anggota hanya melihat dan membayar tagihan miliknya sendiri.
+
+**Langkah F — Laporan dan tutup buku**
+Gerbang `viewReports`/`viewArrears`. Filter bulan dan minggu (minggu **dipotong di batas bulan**), saldo awal periode = `opening_balance` + transaksi sebelum periode, CSV dan PDF, `PeriodClosure` (bulan ditutup tidak bisa diedit).
+
+**Langkah G — Panel Owner/Dev**
+`/owner/*`: daftar organisasi (nama, tanggal dibuat, jumlah anggota, status), aktif/nonaktif; tes bahwa tidak menyentuh data keuangan.
+
+**Langkah H — Tampilan (Tahap 5) dan penyempurnaan**
+Masukkan view prototipe halaman demi halaman mengikuti halaman asli (putuskan D7), buat navigasi/sidebar organisasi (tautan Undangan dan lainnya), terjemahkan teks Breeze, atur D8, perbarui `README.md`, hapus `dashboard.blade.php` dan `welcome.blade.php` bawaan, beri syarat lingkungan pada `OwnerSeeder`. Uji di MariaDB. Pertimbangkan Pull Request ke `main` (perhatikan GitHub Pages).
+
+**Peta halaman prototipe → Laravel (usulan):** `organisasi.html`→`organizations.index` (ada) · `dashboard.html`→`organizations.dashboard` (dasar, ada Policy) · `transaksi.html`→`TransactionController` · `iuran.html`→`InvoiceController` · `anggota.html`→`MemberController` + `InvitationController` (**undangan ada**) · `laporan.html`→`ReportController` · `pengaturan.html`→pengaturan organisasi + `CategoryController` · `owner.html`→`Owner\OrganizationController`.
