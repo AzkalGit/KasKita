@@ -50,11 +50,8 @@ class OrganizationController extends Controller
             // Kategori bawaan yang dipakai modul iuran
             $org->categories()->create(['name' => 'Iuran', 'is_system' => true]);
 
-            Invitation::create([
-                'organization_id' => $org->id,
-                'code' => $this->newCode(),
-                'created_by' => $user->id,
-            ]);
+            // Kode awal berlaku 7 hari (tidak permanen); Admin bisa membuat/menutup/mengganti kode di halaman Undangan
+            Invitation::issue($org, Invitation::DEFAULT_DAYS, $user);
         });
 
         return redirect()->route('organizations.index')
@@ -137,14 +134,5 @@ class OrganizationController extends Controller
 
         return redirect()->route('organizations.index')
             ->with('status', "Kamu bergabung ke {$org->name} sebagai Anggota.");
-    }
-
-    private function newCode(): string
-    {
-        do {
-            $code = strtoupper(Str::random(8));
-        } while (Invitation::where('code', $code)->exists());
-
-        return $code;
     }
 }
