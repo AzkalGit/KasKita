@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationDashboardController;
 use App\Http\Controllers\ProfileController;
@@ -41,6 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/undangan', [InvitationController::class, 'store'])->name('invitations.store');
             Route::patch('/undangan/{invitation}/tutup', [InvitationController::class, 'close'])->name('invitations.close');
             Route::patch('/undangan/{invitation}/buka', [InvitationController::class, 'reopen'])->name('invitations.reopen');
+            // Kelola anggota (khusus Admin, kecuali "keluar" yang boleh untuk anggota aktif mana pun)
+            Route::get('/anggota', [MemberController::class, 'index'])->name('members.index');
+            Route::post('/anggota', [MemberController::class, 'store'])->name('members.store');
+            Route::post('/anggota/keluar', [MemberController::class, 'leave'])->name('members.leave');
+            Route::patch('/anggota/{member}', [MemberController::class, 'update'])->name('members.update');
+            Route::patch('/anggota/{member}/peran', [MemberController::class, 'updateRole'])->name('members.role');
+            Route::patch('/anggota/{member}/nonaktifkan', [MemberController::class, 'deactivate'])->name('members.deactivate');
+            Route::patch('/anggota/{member}/aktifkan', [MemberController::class, 'reactivate'])->name('members.reactivate');
             Route::post('/undangan/{invitation}/ganti', [InvitationController::class, 'regenerate'])->name('invitations.regenerate');
         });
 });

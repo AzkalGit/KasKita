@@ -69,4 +69,25 @@ class OrganizationMember extends Model
     {
         return in_array($this->role, $roles, true);
     }
+
+    public function isCreator(): bool
+    {
+        return $this->user_id !== null
+            && (int) $this->user_id === (int) $this->organization?->created_by;
+    }
+
+    // Dinonaktifkan, bukan dihapus: riwayat tagihan tetap utuh
+    public function deactivate(): void
+    {
+        $this->update(['is_active' => false, 'role' => null]);
+    }
+
+    // Yang punya akun kembali jadi Anggota; kontak tanpa akun tetap tanpa peran
+    public function reactivate(): void
+    {
+        $this->update([
+            'is_active' => true,
+            'role' => $this->hasAccount() ? self::ROLE_ANGGOTA : null,
+        ]);
+    }
 }

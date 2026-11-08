@@ -10,6 +10,9 @@
             <a href="{{ route('invitations.index', $currentOrganization) }}"
                class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Kelola undangan</a>
         @endcan
+    @can('manageMembers', $organization)
+        <a href="{{ route('members.index', $organization) }}" class="text-indigo-600">Kelola anggota</a>
+    @endcan
 
     <div class="py-8">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">

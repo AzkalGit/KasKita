@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invitation;
 use App\Models\InvitationUse;
 use App\Models\Organization;
+use App\Support\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -130,9 +131,12 @@ class OrganizationController extends Controller
             ]);
         });
 
+        ActivityLogger::record($org, $user, 'member.joined', null, ['code' => $invitation->code]);
+
         RateLimiter::clear($key);
 
         return redirect()->route('organizations.index')
             ->with('status', "Kamu bergabung ke {$org->name} sebagai Anggota.");
+
     }
 }
