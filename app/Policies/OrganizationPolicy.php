@@ -26,6 +26,11 @@ class OrganizationPolicy
         return $this->hasRole($user, $organization, M::ROLE_ADMIN, M::ROLE_EDITOR, M::ROLE_ANGGOTA);
     }
 
+    public function viewTransactions(User $user, Organization $organization): bool
+    {
+        return $this->hasRole($user, $organization, M::ROLE_ADMIN, M::ROLE_EDITOR, M::ROLE_ANGGOTA);
+    }
+
     public function viewReports(User $user, Organization $organization): bool
     {
         return $this->hasRole($user, $organization, M::ROLE_ADMIN, M::ROLE_EDITOR);

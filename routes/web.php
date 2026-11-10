@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationDashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -50,6 +52,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/anggota/{member}/peran', [MemberController::class, 'updateRole'])->name('members.role');
             Route::patch('/anggota/{member}/nonaktifkan', [MemberController::class, 'deactivate'])->name('members.deactivate');
             Route::patch('/anggota/{member}/aktifkan', [MemberController::class, 'reactivate'])->name('members.reactivate');
+            // Kategori transaksi (khusus Admin; dicek lewat Policy 'manageSettings')
+            Route::get('/kategori', [CategoryController::class, 'index'])->name('categories.index');
+            Route::post('/kategori', [CategoryController::class, 'store'])->name('categories.store');
+            Route::patch('/kategori/{category}', [CategoryController::class, 'update'])->name('categories.update');
+            Route::delete('/kategori/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+            // Transaksi: semua anggota aktif boleh melihat; Admin/Editor mencatat dan mengubah; hanya Admin menghapus
+            Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');
+            Route::post('/transaksi', [TransactionController::class, 'store'])->name('transactions.store');
+            Route::get('/transaksi/{transaction}/ubah', [TransactionController::class, 'edit'])->name('transactions.edit');
+            Route::patch('/transaksi/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
+            Route::delete('/transaksi/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
             Route::post('/undangan/{invitation}/ganti', [InvitationController::class, 'regenerate'])->name('invitations.regenerate');
         });
 });

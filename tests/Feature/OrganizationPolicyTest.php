@@ -45,6 +45,7 @@ class OrganizationPolicyTest extends TestCase
             'manageMembers' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
             'manageInvitations' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
             'manageSettings' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
+            'viewTransactions' => ['admin' => true,  'editor' => true,  'anggota' => true,  'bukan' => false],
         ];
 
         foreach ($matrix as $ability => $expected) {
