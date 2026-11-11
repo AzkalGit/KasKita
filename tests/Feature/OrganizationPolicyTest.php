@@ -41,11 +41,12 @@ class OrganizationPolicyTest extends TestCase
             'viewArrears' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
             'manageTransactions' => ['admin' => true,  'editor' => true,  'anggota' => false, 'bukan' => false],
             'deleteTransactions' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
-            'manageInvoices' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
+            'manageInvoices' => ['admin' => true,  'editor' => true,  'anggota' => false, 'bukan' => false],
             'manageMembers' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
             'manageInvitations' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
             'manageSettings' => ['admin' => true,  'editor' => false, 'anggota' => false, 'bukan' => false],
             'viewTransactions' => ['admin' => true,  'editor' => true,  'anggota' => true,  'bukan' => false],
+            'viewInvoices' => ['admin' => true,  'editor' => true,  'anggota' => true,  'bukan' => false],
         ];
 
         foreach ($matrix as $ability => $expected) {

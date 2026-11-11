@@ -14,6 +14,9 @@
                 @can('viewTransactions', $organization)
                     <a href="{{ route('transactions.index', $organization) }}" class="text-indigo-600 hover:text-indigo-800">Semua transaksi</a>
                 @endcan
+                @can('viewInvoices', $organization)
+                    <a href="{{ route('invoices.index', $organization) }}" class="text-indigo-600 hover:text-indigo-800">Iuran</a>
+                @endcan
                 @can('manageMembers', $organization)
                     <a href="{{ route('members.index', $organization) }}" class="text-indigo-600 hover:text-indigo-800">Kelola anggota</a>
                 @endcan

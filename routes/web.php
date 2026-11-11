@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationDashboardController;
@@ -44,6 +45,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/undangan', [InvitationController::class, 'store'])->name('invitations.store');
             Route::patch('/undangan/{invitation}/tutup', [InvitationController::class, 'close'])->name('invitations.close');
             Route::patch('/undangan/{invitation}/buka', [InvitationController::class, 'reopen'])->name('invitations.reopen');
+            Route::post('/undangan/{invitation}/ganti', [InvitationController::class, 'regenerate'])->name('invitations.regenerate');
+
             // Kelola anggota (khusus Admin, kecuali "keluar" yang boleh untuk anggota aktif mana pun)
             Route::get('/anggota', [MemberController::class, 'index'])->name('members.index');
             Route::post('/anggota', [MemberController::class, 'store'])->name('members.store');
@@ -52,18 +55,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/anggota/{member}/peran', [MemberController::class, 'updateRole'])->name('members.role');
             Route::patch('/anggota/{member}/nonaktifkan', [MemberController::class, 'deactivate'])->name('members.deactivate');
             Route::patch('/anggota/{member}/aktifkan', [MemberController::class, 'reactivate'])->name('members.reactivate');
+
             // Kategori transaksi (khusus Admin; dicek lewat Policy 'manageSettings')
             Route::get('/kategori', [CategoryController::class, 'index'])->name('categories.index');
             Route::post('/kategori', [CategoryController::class, 'store'])->name('categories.store');
             Route::patch('/kategori/{category}', [CategoryController::class, 'update'])->name('categories.update');
             Route::delete('/kategori/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
             // Transaksi: semua anggota aktif boleh melihat; Admin/Editor mencatat dan mengubah; hanya Admin menghapus
             Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');
             Route::post('/transaksi', [TransactionController::class, 'store'])->name('transactions.store');
             Route::get('/transaksi/{transaction}/ubah', [TransactionController::class, 'edit'])->name('transactions.edit');
             Route::patch('/transaksi/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
             Route::delete('/transaksi/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
-            Route::post('/undangan/{invitation}/ganti', [InvitationController::class, 'regenerate'])->name('invitations.regenerate');
+
+            // Iuran: semua anggota aktif melihat (Admin semua tagihan, lainnya hanya miliknya); hanya Admin mengelola.
+            // {invoice} dicari manual di controller karena tagihan tidak punya organization_id (organisasi lain = 404).
+            Route::get('/iuran', [InvoiceController::class, 'index'])->name('invoices.index');
+            Route::post('/iuran', [InvoiceController::class, 'store'])->name('invoices.store');
+            Route::patch('/iuran/{invoice}/lunas-tunai', [InvoiceController::class, 'payCash'])->whereNumber('invoice')->name('invoices.pay_cash');
+            Route::patch('/iuran/{invoice}/batalkan', [InvoiceController::class, 'cancel'])->whereNumber('invoice')->name('invoices.cancel');
         });
 });
 

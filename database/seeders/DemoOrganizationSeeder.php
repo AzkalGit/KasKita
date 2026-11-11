@@ -70,9 +70,8 @@ class DemoOrganizationSeeder extends Seeder
             ]);
 
             // --- Transaksi otomatis dari tagihan lunas (terkunci lewat invoice_id) ---
-            $this->transaksi($org, $nadia, $iuran, 'masuk', 25000, '2026-10-05', 'Iuran Sinta Maharani Oktober', $invSinta);
-            $this->transaksi($org, $nadia, $iuran, 'masuk', 25000, '2026-10-08', 'Iuran Citra Lestari Oktober', $invCitra);
-
+            $this->transaksi($org, $nadia, $iuran, 'masuk', 25000, '2026-10-05', 'Iuran Oktober 2026', $invSinta);
+            $this->transaksi($org, $nadia, $iuran, 'masuk', 25000, '2026-10-08', 'Iuran Oktober 2026', $invCitra);
             // --- Transaksi manual ---
             $this->transaksi($org, $nadia, $donasi, 'masuk', 200000, '2026-10-03', 'Donasi alumni untuk kegiatan');
             $this->transaksi($org, $rafi, $konsumsi, 'keluar', 150000, '2026-10-10', 'Konsumsi rapat kerja');

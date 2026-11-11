@@ -39,18 +39,29 @@ class MemberController extends Controller
 
     public function update(UpdateMemberRequest $request, Organization $organization, OrganizationMember $member): RedirectResponse
     {
-        $data = $request->safe()->only(['name', 'phone', 'is_billable']);
+        $data = $request->safe()->only(['name', 'phone']);
+        $data['is_billable'] = $request->boolean('is_billable');
 
         // Email anggota yang punya akun mengikuti akunnya, jadi hanya kontak yang boleh diubah emailnya
         if (! $member->hasAccount() && array_key_exists('email', $request->validated())) {
             $data['email'] = $request->validated('email');
         }
 
-        $member->update($data);
+        $member->fill($data);
+        $billableChanged = $member->isDirty('is_billable');
+        $member->save();
 
         ActivityLogger::record($organization, $request->user(), 'member.updated', $member, [
             'name' => $member->name,
         ]);
+
+        // E2: perubahan "ditagih atau tidak" dicatat tersendiri
+        if ($billableChanged) {
+            ActivityLogger::record($organization, $request->user(), 'member.billable_changed', $member, [
+                'name' => $member->name,
+                'is_billable' => (bool) $member->is_billable,
+            ]);
+        }
 
         return $this->done($organization, 'Data anggota diperbarui.');
     }

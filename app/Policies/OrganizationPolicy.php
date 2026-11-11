@@ -31,6 +31,12 @@ class OrganizationPolicy
         return $this->hasRole($user, $organization, M::ROLE_ADMIN, M::ROLE_EDITOR, M::ROLE_ANGGOTA);
     }
 
+    // Halaman Iuran: pengelola (Admin/Editor) melihat semua tagihan, Anggota hanya miliknya (dibatasi di controller)
+    public function viewInvoices(User $user, Organization $organization): bool
+    {
+        return $this->hasRole($user, $organization, M::ROLE_ADMIN, M::ROLE_EDITOR, M::ROLE_ANGGOTA);
+    }
+
     public function viewReports(User $user, Organization $organization): bool
     {
         return $this->hasRole($user, $organization, M::ROLE_ADMIN, M::ROLE_EDITOR);
@@ -51,9 +57,10 @@ class OrganizationPolicy
         return $this->hasRole($user, $organization, M::ROLE_ADMIN);
     }
 
+    // D1 (revisi): Admin + Editor. Aturan "bukan tagihan sendiri" dijaga di InvoiceController.
     public function manageInvoices(User $user, Organization $organization): bool
     {
-        return $this->hasRole($user, $organization, M::ROLE_ADMIN);
+        return $this->hasRole($user, $organization, M::ROLE_ADMIN, M::ROLE_EDITOR);
     }
 
     public function manageMembers(User $user, Organization $organization): bool
