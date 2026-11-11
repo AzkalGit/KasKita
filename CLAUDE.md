@@ -1,18 +1,18 @@
 # CLAUDE.md — KasKita (Laravel)
 
 > Dokumen serah-terima antar sesi Claude. **Perbarui di setiap kemajuan** (bagian 2, 9, 11, 12 wajib).
-> Terakhir diperbarui: **11 Nov 2026** · Tes: **141 lulus, 899 assertion** (dijalankan pemilik di repo asli) · Bentuk proyek: Laravel 13 + Breeze (Blade).
+> Terakhir diperbarui: **11 Nov 2026** · Tes: **150 lulus, 955 assertion** (dijalankan pemilik di repo asli) · Bentuk proyek: Laravel 13 + Breeze (Blade).
 
 ## 0. Cara kerja (baca dulu)
 
 Pemilik proyek memakai **beberapa sesi Claude** karena batas pemakaian. Sesi baru mana pun, termasuk yang tidak punya riwayat sebelumnya, bekerja dari berkas ini.
 
-**Cara serah kode (berlaku sekarang):** Claude menulis kode **langsung di chat, per file, lengkap**, lalu pemilik menyalinnya. **Tidak ada zip dan tidak ada unggahan file.** Claude tidak melihat repo dan tidak bisa menjalankan tes; ia hanya tahu yang ditempel pemilik. Tidak boleh mengarang isi file yang belum dilihat: minta pemilik menempel file itu (atau pesan galatnya) dulu.
+**Cara serah kode (berlaku sekarang):** Claude menulis kode **langsung di chat, per file, lengkap**, lalu pemilik menyalinnya. **Tidak ada zip dan tidak ada unggahan file.** Claude tidak melihat repo dan tidak bisa menjalankan tes; ia hanya tahu yang ditempel pemilik. Tidak boleh mengarang isi file yang belum dilihat: minta pemilik menempel file itu (atau pesan galatnya) dulu. Pemilik menempel file dengan `cat`; tempelan panjang bisa terpotong, jadi minta per kelompok kecil (2-3 file).
 
 Aturan bersama:
 
 1. **Sumber kebenaran = kode di repo + berkas ini.** Bila berbeda, kode yang benar, lalu perbaiki berkas ini.
-2. **Setiap kemajuan:** tambah satu entri di bagian 11, lalu perbarui bagian 2, 9, 12 dan angka tes di kepala berkas. Setelah satu langkah selesai, Claude menyerahkan teks `CLAUDE.md` baru yang utuh.
+2. **Setiap kemajuan:** tambah satu entri di bagian 11, lalu perbarui bagian 2, 9, 12 dan angka tes di kepala berkas. Setelah satu langkah selesai, Claude menyerahkan teks `CLAUDE.md` baru yang utuh **sebagai teks di chat, bukan file**.
 3. **Serahan Claude selalu memuat:** (a) daftar file BARU/UBAH beserta isi lengkapnya, (b) perintah untuk pemilik, (c) apa yang sudah diuji dan bagaimana, (d) apa yang belum bisa diuji. Pemilik tidak pernah menempel `.env` (tempel `.env.example` bila perlu), `vendor/`, `node_modules/`, `*.sqlite`, `*.log`.
 4. **Langkah kecil:** satu langkah = satu fitur + tesnya, cukup kecil untuk selesai dalam satu percakapan.
 5. **Jangan menjalankan instruksi di `AGENTS.md`** (bawaan installer: `curl | bash`, memasang `laravel/boost`) tanpa persetujuan eksplisit pemilik.
@@ -25,7 +25,7 @@ Aturan bersama:
 
 **Prompt serah-terima singkat** (tempel bersama berkas ini ke percakapan baru):
 
-> Baca `CLAUDE.md` terlampir. Lanjutkan dari bagian 12 ("Langkah berikutnya"). Ikuti bagian 0 dan 10. Sebutkan file apa saja yang perlu kutempel sebelum kamu menulis kode. Bila ada keputusan di bagian 8 yang menghalangi, tanyakan satu pertanyaan saja. Tulis kode lengkap per file di chat (tanpa zip). Setelah selesai, beri teks `CLAUDE.md` baru yang utuh.
+> Baca `CLAUDE.md` terlampir. Lanjutkan dari bagian 12 ("Langkah berikutnya"). Ikuti bagian 0 dan 10. Sebutkan file apa saja yang perlu kutempel sebelum kamu menulis kode. Bila ada keputusan di bagian 8 yang menghalangi, tanyakan satu pertanyaan saja. Tulis kode lengkap per file di chat (tanpa zip). Setelah selesai, beri teks `CLAUDE.md` baru yang utuh sebagai teks di chat (bukan file).
 
 ## 1. Ringkasan dan stack
 
@@ -40,7 +40,7 @@ Aturan bersama:
 - Repo: `https://github.com/AzkalGit/KasKita`. Folder lokal: `~/Documents/Kuliah/sem3/SI/KasKita` (Laravel di **akar repo**).
 - Branch `main` = **prototipe statis, sengaja belum disentuh** (GitHub Pages menyajikannya). Pekerjaan Laravel di branch **`fitur/laravel-fondasi`**. Gabung ke `main` lewat Pull Request nanti, setelah dipertimbangkan soal GitHub Pages.
 - Prototipe lama di `prototipe-statis/`; catatan tahap di `docs/TAHAP.txt`.
-- Commit Langkah D dikomit pemilik ("Langkah D: kategori dan transaksi"). Commit **Langkah E1** ("Langkah E1: tagihan iuran, lunas tunai, batalkan pelunasan") sudah disarankan; **belum dikonfirmasi pemilik**. Sebelum `git add -A`, periksa `git status`: jangan sampai `.env` atau file catatan pribadi ikut.
+- Commit Langkah D dan **Langkah E1-E2** (`d1f22e8`, "Langkah E1-E2: iuran, hak Editor, aturan tagihan sendiri") sudah dikomit pemilik. **Belum di-push** ke GitHub (cabang lokal lebih maju dari `origin/fitur/laravel-fondasi`); `git push` bila perlu. Sebelum `git add -A`, periksa `git status`: jangan sampai `.env` atau file catatan pribadi ikut.
 
 ### Perintah penting
 
@@ -63,10 +63,10 @@ Bila `composer.json` diubah, jalankan `composer update --lock`.
 | --- | --- | --- |
 | 1. Analisis dan desain database | **Selesai** | Skema di migrasi (bagian 4). ERD tidak ada di repo. |
 | 2. Migration dan Model | **Selesai** | 9 model + relasi. Empat migrasi diedit di tempat. |
-| 3. Autentikasi dan sistem akses | **Sebagian** | Breeze, email wajib terverifikasi, middleware `org.member`, organisasi aktif lewat URL, `OrganizationPolicy` (11 kemampuan). Gerbang terpasang di dashboard, undangan, anggota, kategori, transaksi, **iuran (E1)**. **Belum:** aturan "tidak menyentuh tagihan sendiri" (E2), panel Owner. |
-| 4. Controller dan logika bisnis | **Sebagian** | Ada: Organization, OrganizationDashboard, Invitation (B), Member (C), Category dan Transaction (D), **Invoice (E1: buat tagihan, lunas tunai, batalkan)**, hapus akun di Profile. **Belum:** pengajuan bayar dan bukti (E3), Report, Owner. |
-| 5. View (Blade) | **Sebagian** | `organizations/{index,dashboard}`, `invitations/index`, `members/index`, `categories/index`, `transactions/{index,edit,_fields}`, **`invoices/index`**. Halaman auth/profil masih bahasa Inggris bawaan Breeze. |
-| 6. Pengujian dan penyempurnaan | **Sebagian** | 141 tes lulus. Belum ada tes laporan. |
+| 3. Autentikasi dan sistem akses | **Sebagian** | Breeze, email wajib terverifikasi, middleware `org.member`, organisasi aktif lewat URL, `OrganizationPolicy` (11 kemampuan). Gerbang terpasang di dashboard, undangan, anggota, kategori, transaksi, iuran. Aturan "tidak menyentuh tagihan sendiri" **terpasang (E2)**. **Belum:** panel Owner. |
+| 4. Controller dan logika bisnis | **Sebagian** | Ada: Organization, OrganizationDashboard, Invitation (B), Member (C; E2: log `is_billable`), Category dan Transaction (D), **Invoice (E1 + E2: buat tagihan, lunas tunai, batalkan, aturan tagihan sendiri)**, hapus akun di Profile. **Belum:** pengajuan bayar dan bukti (E3), Report, Owner. |
+| 5. View (Blade) | **Sebagian** | `organizations/{index,dashboard}`, `invitations/index`, `members/index`, `categories/index`, `transactions/{index,edit,_fields}`, `invoices/index`. Halaman auth/profil masih bahasa Inggris bawaan Breeze. |
+| 6. Pengujian dan penyempurnaan | **Sebagian** | 150 tes lulus. Belum ada tes laporan. |
 
 ## 3. Struktur dan konvensi
 
@@ -98,10 +98,11 @@ Konvensi:
 - **Pola controller modul:** metode privat `done(...)` (redirect ke index dengan `status`) dan `refuse(...)` (redirect dengan `withErrors([...])` pada kunci modul); view menampilkan keduanya.
 - **Uang** = bilangan bulat rupiah (kolom `bigint`). **Tanggal transaksi** = `date`; **periode iuran** = `char(7)` `'YYYY-MM'`.
 - **Email** disimpan huruf kecil (mutator `OrganizationMember::email`); kosong = `NULL`.
-- **Organisasi aktif ditentukan oleh URL**; semua rute organisasi di grup `org.member` dengan `{organization}` dan **`->scopeBindings()`** (parameter anak seperti `{invitation}`, `{transaction}`, `{member}` hanya dicari dalam organisasi di URL; ID organisasi lain = 404). Pengecualian: **`{invoice}`** dicari manual (`Invoice::inOrganization()`), karena tagihan tidak punya `organization_id`.
+- **Organisasi aktif ditentukan oleh URL**; semua rute organisasi di grup `org.member` dengan `{organization}` dan **`->scopeBindings()`** (parameter anak seperti `{invitation}`, `{transaction}`, `{member}` hanya dicari dalam organisasi di URL; ID organisasi lain = 404). Pengecualian: **`{invoice}`** dicari manual (`Invoice::inOrganization()`, rute memakai `->whereNumber('invoice')`), karena tagihan tidak punya `organization_id`.
 - **Otorisasi:** `Gate::authorize('<kemampuan>', $organization)` di controller, `@can` di view (`$currentOrganization`, `$currentMember` dibagikan middleware). Aksi berinput: pemeriksaan di `FormRequest::authorize()`. Peran dicek lewat `OrganizationMember::hasRole()` dan konstanta `ROLE_*`.
 - **Jangan menaruh rute aplikasi di `routes/auth.php`**; `RoutingTest` menjaga rute ganda.
 - Jalankan `vendor/bin/pint` pada file yang diubah.
+- **Disk file:** `config/filesystems.php` bawaan Laravel: `FILESYSTEM_DISK=local` → disk `local` berakar `storage/app/private` (privat, cocok untuk bukti bayar); disk `public` ada tetapi **jangan dipakai untuk lampiran**.
 
 ## 4. Skema database (aktual)
 
@@ -123,12 +124,12 @@ Tanda `?` = boleh NULL. `FK(hapus)` = aturan saat induk dihapus.
 Catatan skema:
 
 - **Dua jenis "anggota":** `user_id` terisi = punya akun; NULL = kontak yang ditagih. Peran hanya bermakna bila akun ada.
-- **`is_billable` ≠ `is_active`:** ditagih atau tidak, versus masih tercatat aktif.
+- **`is_billable` ≠ `is_active`:** ditagih atau tidak, versus masih tercatat aktif. **`is_billable` tidak terkait peran**: Admin/Editor tidak punya tagihan sampai `is_billable` dicentang (halaman Anggota → Ubah data) dan tagihan bulan itu dibuat ulang.
 - **`invoices` tidak punya `organization_id`** (dicapai lewat `member`). `transactions.category_id` tidak dipaksa DB satu organisasi: divalidasi di FormRequest (sudah di `TransactionRequest`).
 - Kolom `role`, `status`, `type`, `method` string tanpa CHECK; validasi di aplikasi.
 - `restrictOnDelete` pada `invoices.member_id`, `transactions.invoice_id`, `transactions.category_id` **disengaja**; hapus organisasi lewat `Organization::purge()`.
 - Owner tidak punya tabel sendiri: `users.platform_role = 'owner'`.
-- **Migrasi lama diedit di tempat.** Langkah B, D, E1 **tidak** menambah migrasi.
+- **Migrasi lama diedit di tempat.** Langkah B, D, E1, E2 **tidak** menambah migrasi.
 
 ## 5. Aturan bisnis yang SUDAH ada di kode
 
@@ -150,13 +151,13 @@ Catatan skema:
 - `Organization::purge()`: hapus transaksi (termasuk soft-deleted) → tagihan → organisasi dalam satu transaksi DB; belum ada UI.
 - **Kelola undangan (hanya Admin, `manageInvitations`):** masa berlaku 1/7/30 hari (`Invitation::DURATIONS`); banyak kode aktif boleh; `status()`: `ditutup` → `kedaluwarsa` → `aktif`; kedaluwarsa tidak bisa dibuka lagi; ganti kode = tutup lama + buat baru dalam satu `DB::transaction`; kode tidak pernah dihapus; kode 8 karakter tanpa `0/O/1/I`. Log: `invitation.created|closed|reopened|regenerated`.
 
-**Kelola anggota (C)** — *ditulis Pemandu, belum ditinjau sesi lain*
+**Kelola anggota (C, E2)** — *C ditulis Pemandu, belum ditinjau sesi lain*
 
 - Hanya Admin (`manageMembers`) kecuali `leave` (anggota aktif non-Admin). Peran yang bisa diatur hanya **Anggota ↔ Editor**; Admin tidak bisa diberikan atau dicabut lewat form.
 - Pembuat organisasi, Admin, dan diri sendiri terlindungi dari perubahan peran dan penonaktifan. Kontak tanpa akun tidak bisa diberi peran.
 - Anggota **dinonaktifkan, tidak dihapus**; reaktivasi mengembalikan akun jadi Anggota. Email anggota berakun mengikuti akunnya.
-- Log lewat `ActivityLogger`: `member.created|updated|role_changed|deactivated|reactivated|left|joined`.
-- **Belum diketahui:** apakah `is_billable` bisa diubah dari halaman Anggota (lihat bagian 12, E2).
+- **`is_billable` bisa diubah Admin** lewat "Ubah data" di halaman Anggota (termasuk barisnya sendiri; `UpdateMemberRequest` mewajibkannya). **E2:** perubahan nilainya dicatat tersendiri sebagai `member.billable_changed` (selain `member.updated`).
+- Log lewat `ActivityLogger`: `member.created|updated|billable_changed|role_changed|deactivated|reactivated|left|joined`.
 
 **Kategori dan transaksi (D)** — *tes hijau; belum ditinjau sesi lain*
 
@@ -166,15 +167,16 @@ Catatan skema:
 - **Terkunci:** transaksi ber-`invoice_id` (`isLocked()`) tidak bisa diubah atau dihapus; halaman ubah dialihkan dengan pesan.
 - **Daftar:** filter `month` (`Y-m`), `type`, `q` (LIKE); ringkasan mengikuti filter; 15 per halaman. Log: `transaction.created|updated|deleted`.
 
-**Iuran (E1)** — *tes hijau (16 tes); alur di browser belum dicoba*
+**Iuran (E1, E2)** — *tes hijau (23 tes di `InvoiceManagementTest`); browser: sebagian (lihat bagian 7)*
 
 - Rute (`org.member`): `invoices.index` (GET `/iuran`), `invoices.store` (POST `/iuran`), `invoices.pay_cash` (PATCH `/iuran/{invoice}/lunas-tunai`), `invoices.cancel` (PATCH `/iuran/{invoice}/batalkan`). `{invoice}` dicari lewat `Invoice::inOrganization()` (organisasi lain = 404).
-- **Hak saat ini:** semua anggota aktif membuka halaman (`viewInvoices`). **Admin** melihat semua tagihan satu periode (bawaan: terbaru; filter `period`) dan mengelola (`manageInvoices` = Admin saja). Editor dan Anggota hanya melihat tagihan **miliknya**, semua bulan, tanpa tombol. *(Akan direvisi di E2.)*
-- **Buat tagihan:** satu periode (`YYYY-MM`, 2000-an) dan jumlah untuk semua anggota **aktif dan `is_billable`**; yang sudah punya tagihan periode itu dilewati (tidak dobel, jumlah lama tidak berubah). Log `invoice.generated`.
-- **Lunas tunai:** dari `belum` atau `menunggu`; `DB::transaction` + `lockForUpdate`; tagihan jadi `lunas`/`tunai`/`paid_at`; membuat transaksi `masuk` kategori Iuran dengan `invoice_id`. **Keterangan "Iuran {Bulan} {Tahun}" tanpa nama anggota (D2).** Dua kali = galat `invoice`. Log `invoice.paid_cash`.
-- **Batalkan pelunasan:** hanya untuk yang lunas; transaksi otomatis **dihapus permanen** (`forceDelete`, karena `transactions.invoice_id` unik); tagihan kembali `belum`; pelunasan ulang bisa. Log `invoice.payment_cancelled`.
-- `Invoice`: konstanta `STATUS_*`/`METHOD_TUNAI`, `scopeInOrganization`, `isPaid()`, `labelFor('2026-10')` = "Oktober 2026", `periodLabel()`.
-- Seeder: keterangan transaksi iuran diubah menjadi "Iuran Oktober 2026" (tanpa nama). `proof_path` tagihan Budi menunjuk berkas fiktif yang tidak ada di disk.
+- **Hak (E2):** semua anggota aktif membuka halaman (`viewInvoices`). **Admin dan Editor** (`manageInvoices`) melihat semua tagihan satu periode (bawaan: terbaru; filter `period`), membuat tagihan, melunasi tunai, membatalkan pelunasan. **Anggota** hanya melihat tagihan **miliknya**, semua bulan, tanpa tombol.
+- **Aturan tagihan sendiri (E2):** `InvoiceController::isOwn()` (`member.user_id` = pengguna yang bertindak; kontak tanpa akun tidak pernah "milik sendiri"). `payCash` dan `cancel` menolak tagihan sendiri dengan galat `invoice` (bukan 403), pesan konstanta `OWN_INVOICE_MESSAGE`. View: tagihan sendiri bertanda "(tagihanmu)", **tanpa tombol**, dengan keterangan: "Menunggu diverifikasi pengelola lain" bila ada pengelola aktif lain (Admin/Editor dengan akun, bukan dirinya), atau "Belum ada pengelola lain…" bila tidak ada; untuk tagihan sendiri yang sudah lunas: pembatalan hanya oleh pengelola lain. `$hasOtherManager` dihitung di `index`.
+- **Buat tagihan:** satu periode (`YYYY-MM`, 2000-an) dan jumlah untuk semua anggota **aktif dan `is_billable`**; yang sudah punya tagihan periode itu dilewati (tidak dobel, jumlah lama tidak berubah). Karena itu, setelah `is_billable` seseorang diaktifkan, tagihan bulan berjalan harus dibuat ulang agar tagihannya muncul. Log `invoice.generated`. `StoreInvoiceRequest::authorize()` memakai `manageInvoices`.
+- **Lunas tunai:** dari `belum` atau `menunggu`; `DB::transaction` + `lockForUpdate`; tagihan jadi `lunas`/`tunai`/`paid_at`/`rejection_reason` null; membuat transaksi `masuk` kategori Iuran (`firstOrCreate` `['name'=>'Iuran','is_system'=>true]`) dengan `invoice_id`, `created_by` = pelaku, `tanggal` = hari ini. **Keterangan "Iuran {Bulan} {Tahun}" tanpa nama anggota (D2).** Dua kali = galat `invoice`. Log `invoice.paid_cash`.
+- **Batalkan pelunasan:** hanya untuk yang lunas; transaksi otomatis **dihapus permanen** (`forceDelete`, karena `transactions.invoice_id` unik); tagihan kembali `belum` (method/paid_at/rejection_reason null); pelunasan ulang bisa. Log `invoice.payment_cancelled`.
+- `Invoice`: konstanta `STATUS_*`/`METHOD_TUNAI` (belum ada `METHOD_TRANSFER`), `scopeInOrganization`, `isPaid()`, `labelFor('2026-10')` = "Oktober 2026", `periodLabel()`, relasi `member()` dan `transaction()`.
+- Seeder: keterangan transaksi iuran "Iuran Oktober 2026" (tanpa nama). `proof_path` tagihan Budi = `proofs/demo-bukti-budi.svg`, berkas fiktif yang tidak ada di disk. Nadia dan Rafi di seeder **tidak ditagih** (D12).
 
 ## 6. Peran dan hak akses
 
@@ -184,12 +186,12 @@ Catatan skema:
 | --- | :-: | :-: | :-: | :-: |
 | `viewDashboard` | ya | ya | ya (D2) | – |
 | `viewTransactions` — terpasang | ya | ya | ya | – |
-| `viewInvoices` — terpasang (Admin semua, lainnya hanya miliknya) | ya | ya | ya | – |
+| `viewInvoices` — terpasang (Admin/Editor semua, Anggota hanya miliknya) | ya | ya | ya | – |
 | `viewReports` | ya | ya | – | – |
 | `viewArrears` | ya | – | – | – |
 | `manageTransactions` — terpasang | ya | ya | – | – |
 | `deleteTransactions` — terpasang | ya | – | – | – |
-| `manageInvoices` — terpasang (**saat ini Admin saja; E2: Admin + Editor**) | ya | – *(E2: ya)* | – | – |
+| `manageInvoices` — terpasang (**E2: Admin + Editor**, kecuali tagihan sendiri) | ya | ya | – | – |
 | `manageMembers` — terpasang | ya | – | – | – |
 | `manageInvitations` — terpasang | ya | – | – | – |
 | `manageSettings` — terpasang | ya | – | – | – |
@@ -198,13 +200,13 @@ Catatan skema:
 
 **Aturan peran (diterapkan di Langkah C):** pembuat organisasi tidak bisa diturunkan atau dikeluarkan; tak seorang pun mengubah perannya sendiri; kode undangan hanya memberi Anggota. **Minimal satu Admin** terjamin tidak langsung (Admin tidak bisa diturunkan atau keluar); **harus dirancang ulang** bila promosi Admin dibuat (D5).
 
-**Rencana aturan Iuran (disepakati pemilik, belum diterapkan; E2):** **tak seorang pun boleh melunasi, memverifikasi, atau membatalkan pelunasan tagihan yang `member.user_id`-nya dirinya sendiri**; tagihan pengelola diverifikasi orang lain. Organisasi tanpa pengelola kedua membuat tagihan pengelola menggantung: halaman Iuran harus menampilkan pesan jelas. Kolusi dua pengelola tidak bisa dicegah kode; yang tersedia hanya jejak di riwayat aktivitas dan transaksi yang terlihat semua anggota.
+**Aturan Iuran (diterapkan di E2):** tak seorang pun melunasi, memverifikasi, atau membatalkan pelunasan tagihan yang `member.user_id`-nya dirinya sendiri; tagihan pengelola diverifikasi pengelola lain. Organisasi tanpa pengelola kedua membuat tagihan pengelola menggantung: halaman Iuran menampilkan pesan jelas. Kolusi dua pengelola tidak bisa dicegah kode; yang tersedia hanya jejak di riwayat aktivitas dan transaksi yang terlihat semua anggota. **Berlaku juga untuk setujui/tolak pengajuan di E3.**
 
 **Owner/Dev** punya controller/rute terpisah (`/owner/*`) yang **tidak pernah** menyentuh `transactions`, `invoices`, atau lampiran, dengan tes yang memastikannya. Pemegang server/database tetap bisa membaca data lewat alat database; yang dijamin hanya tidak adanya fitur mengintip, kata sandi ter-hash, dan panel berisi metadata.
 
 ## 7. Data demo dan pengujian
 
-**Seeder** (`php artisan migrate:fresh --seed`). Kata sandi semua akun: `KitaDemo2026!`; semua terverifikasi.
+**Seeder** (`php artisan migrate:fresh --seed`). Kata sandi semua akun: `KitaDemo2026!`; semua terverifikasi. Blok "Akun demo" di `DemoOrganizationSeeder` hanya satu (dicek).
 
 | Peran | Email | Ditagih |
 | --- | --- | :-: |
@@ -214,40 +216,41 @@ Catatan skema:
 | Anggota (Dimas Saputra) | `anggota@kaskita.demo` | ya |
 | Kontak tanpa akun | `sinta@`, `budi@`, `citra@` `kaskita.demo` | ya |
 
-Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `BEM26KAS` (permanen), kategori Iuran/Donasi/Konsumsi/Perlengkapan/Transportasi, 6 transaksi (2 otomatis dari iuran), 4 tagihan 2026-10 (2 lunas, 1 menunggu, 1 belum). Saldo awal dashboard = Rp 455.000. Seeder tidak idempotent. **Peran akun demo bisa berubah bila pemilik mengubahnya di halaman Anggota** (Dimas pernah menjadi Editor karena itu, bukan bug); `migrate:fresh --seed` mengembalikannya.
+Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `BEM26KAS` (permanen), kategori Iuran/Donasi/Konsumsi/Perlengkapan/Transportasi, 6 transaksi (2 otomatis dari iuran), 4 tagihan 2026-10: Sinta lunas (transfer), Dimas belum, Budi menunggu (transfer, bukti fiktif), Citra lunas (tunai). Saldo awal dashboard = Rp 455.000. Seeder tidak idempotent. **Peran akun demo bisa berubah bila pemilik mengubahnya di halaman Anggota**; `migrate:fresh --seed` mengembalikannya. **Untuk mendemokan aturan tagihan sendiri:** Admin mencentang "Ditagih" pada baris Nadia dan Rafi (Anggota → Ubah data), lalu membuat tagihan 2026-10 lagi (yang sudah ada dilewati).
 
-**Tes** (`php artisan test`; **141 lulus, 899 assertion**): Auth Breeze (18; login/daftar mengalihkan ke `organizations.index`); Example (2); `OrganizationTest` (18); `MembershipLinkingTest` (7); `AccountDeletionTest` (7); `OrganizationPurgeTest` (2); `RoutingTest` (3); `ProfileTest` (5); `OrganizationPolicyTest` (4, matriks 11 kemampuan); `InvitationManagementTest` (15); `MemberManagementTest` (19); `CategoryManagementTest` (11); `TransactionManagementTest` (14); **`InvoiceManagementTest` (16, E1: halaman per peran, Admin semua vs Anggota miliknya, tombol per peran, buat tagihan hanya anggota aktif+ditagih, tidak dobel, validasi isian, hanya Admin membuat, lunas tunai + transaksi tanpa nama, lunas dua kali ditolak, menunggu bisa dilunasi tunai, batalkan menghapus transaksi dan bisa lunas lagi, batalkan yang belum lunas ditolak, Editor/Anggota tidak bisa melunasi/membatalkan, organisasi lain 404, pilih bulan)**.
+**Tes** (`php artisan test`; **150 lulus, 955 assertion**): Auth Breeze (18; login/daftar mengalihkan ke `organizations.index`); Example (2); `OrganizationTest` (18); `MembershipLinkingTest` (7); `AccountDeletionTest` (7); `OrganizationPurgeTest` (2); `RoutingTest` (3); `ProfileTest` (5); `OrganizationPolicyTest` (4, matriks 11 kemampuan, Editor `manageInvoices` = ya); `InvitationManagementTest` (15); `MemberManagementTest` (19); `CategoryManagementTest` (11); `TransactionManagementTest` (14); **`InvoiceManagementTest` (23: E1 + E2 — Editor melihat semua tagihan, Admin/Editor membuat tagihan, Editor melunasi/membatalkan tagihan orang lain, pengelola tidak bisa melunasi/membatalkan tagihan sendiri, Admin dan Editor saling memverifikasi, tombol dan keterangan tagihan sendiri, pesan bila tidak ada pengelola lain aktif)**; **`MemberBillableTest` (2: Admin mengubah `is_billable` + log `member.billable_changed`; tanpa perubahan tidak ada log)**.
 
 Catatan pengujian:
 
 - Tes memakai SQLite di memori; aplikasi memakai MariaDB. Kolasi dan FK belum diuji di MariaDB.
-- **Browser:** pemilik sudah mencoba login, daftar, `/organisasi`, dashboard, dan melihat halaman Transaksi (tautan tampil). Peran Dimas sempat Editor sehingga tombol Tambah/Ubah muncul (data, bukan kode). **Belum dicoba/dilaporkan:** alur Transaksi lengkap, Kategori, Undangan (tombol Salin hanya jalan di `localhost`/`127.0.0.1`/HTTPS), Anggota, tombol Keluar, dan **alur Iuran E1**. Pemilik juga melihat halaman Transaksi melebar penuh dan tanpa gaya (lihat masalah 23).
-- **Uji mutasi:** E1 satu kali (Gate `manageInvoices` di `payCash` dikomentari → tepat satu tes gagal: `editor dan anggota tidak bisa melunasi atau membatalkan`; sudah dipulihkan). Mutasi `findInvoice` dan filter `member_id` belum dicoba. Langkah D belum diuji mutasi. Opsional (aturan 10).
+- **Browser:** pemilik sudah mencoba login, daftar, `/organisasi`, dashboard, halaman Transaksi, dan **sebagian E2**: Dimas (Anggota yang ditagih; sempat Editor) tidak bisa melunasi tagihannya sendiri. Nadia dan Rafi tidak punya tagihan karena `is_billable=false` di seeder (perilaku benar, bukan bug). **Belum dicoba:** skenario Admin–Editor saling memverifikasi dan keterangan "(tagihanmu)" di browser, alur Transaksi lengkap, Kategori, Undangan (tombol Salin hanya jalan di `localhost`/`127.0.0.1`/HTTPS), Anggota, tombol Keluar, alur Iuran E1 lengkap. Halaman Transaksi sempat tampak melebar penuh dan tanpa gaya (masalah 23).
+- **Uji mutasi:** E1 satu kali (Gate `manageInvoices` di `payCash`; sudah dipulihkan). **E2 belum dilakukan** (saran: komentari blok `isOwn` di `payCash`, lalu `cancel`; harapannya tepat satu tes gagal masing-masing). Langkah D belum. Opsional (aturan 10).
 - Verifikasi middleware rute: `route:list -v` dan `RoutingTest`.
 
 ## 8. Keputusan pemilik
 
 | # | Pertanyaan | Keputusan / keadaan |
 | --- | --- | --- |
-| D1 | Hak **Editor** | Awal: default prototipe (catat/ubah transaksi, baca laporan tanpa tunggakan). **Revisi disepakati 11 Nov, diterapkan di E2:** Editor juga mengelola Iuran (membuat tagihan, lunas tunai, batalkan, verifikasi bukti) **kecuali tagihannya sendiri**. Pengaturan, anggota, undangan, kategori, hapus transaksi tetap hanya Admin. |
+| D1 | Hak **Editor** | **Diterapkan (E2).** Editor mencatat/mengubah transaksi, membaca laporan tanpa tunggakan, dan mengelola Iuran (buat tagihan, lunas tunai, batalkan; verifikasi bukti di E3) **kecuali tagihannya sendiri**. Pengaturan, anggota, undangan, kategori, hapus transaksi tetap hanya Admin. |
 | D2 | Anggota melihat dashboard? | **Boleh, hanya lihat** (dashboard dan daftar transaksi). Keterangan transaksi otomatis iuran **tanpa nama anggota**; tunggakan hanya terlihat Admin. Diterapkan di E1 dan seeder. |
-| D3 | Admin/Editor ikut ditagih? | **Boleh (disepakati 11 Nov):** Admin/Editor yang ingin membayar diset `is_billable = true` dan membayar seperti anggota lain, dengan syarat tidak memverifikasi tagihannya sendiri. Satu akun, bukan dua. Bawaan pembuat organisasi tetap `is_billable=false`. Dosen pengawas = Anggota dengan `is_billable=false`. |
+| D3 | Admin/Editor ikut ditagih? | **Diterapkan (E2).** Admin/Editor yang ingin membayar diset `is_billable = true` (halaman Anggota → Ubah data) dan membayar seperti anggota lain, tanpa memverifikasi tagihannya sendiri. Satu akun, bukan dua. Bawaan pembuat organisasi tetap `is_billable=false`. Dosen pengawas = Anggota dengan `is_billable=false`. |
 | D4 | Admin menambah kontak dengan email akun terverifikasi | Tidak ditautkan otomatis. Usulan: undangan yang harus diterima. |
 | D5 | Serah-terima Admin, promosi ke Admin, hapus organisasi | Belum ada UI. Admin belum bisa keluar. Jaminan "minimal satu Admin" harus dirancang ulang. |
 | D6 | Nama organisasi boleh kembar? | Boleh. |
 | D7 | CSS prototipe vs Tailwind Breeze | Belum ditentukan. Aturan pemilik: tampilan mengikuti halaman asli KasKita. |
 | D8 | Locale `id` dan timezone `Asia/Jakarta` | Sekarang `en` dan `UTC`. Belum diubah. |
 | D9 | Aturan kode undangan | 1/7/30 hari; kode awal 7 hari; banyak kode aktif; ditutup, tidak dihapus. |
-| D10 | Lampiran | **Revisi:** bukti bayar iuran dikerjakan di **E3**; nota transaksi manual (`transactions.attachment_path`) menyusul sesudahnya. |
+| D10 | Lampiran | Bukti bayar iuran dikerjakan di **E3**; nota transaksi manual (`transactions.attachment_path`) menyusul sesudahnya. |
 | D11 | Aturan bukti bayar (disepakati 11 Nov, diterapkan di E3) | Anggota menekan "Saya sudah bayar" pada tagihannya, memilih transfer/tunai; **bukti opsional**. Selama `menunggu`: bukti boleh ditambah, diganti, dihapus, atau pengajuan ditarik (kembali `belum`). Verifikator menyetujui (`lunas` + transaksi otomatis) atau menolak dengan alasan (kembali `belum`, alasan tampil, boleh ajukan ulang). Setelah `lunas`, bukti terkunci (batalkan pelunasan dulu). Bukti di disk **privat**, jpg/png/pdf maks 2 MB, nama acak, unduh lewat rute yang dicek hak (pemilik tagihan atau verifikator), file lama dihapus saat diganti. Label jelas "tanpa bukti" untuk verifikator. |
+| D12 | Seeder: Nadia dan Rafi ikut ditagih? | **Tidak, dibiarkan** (11 Nov): tetap `is_billable=false`. Demo aturan tagihan sendiri lewat UI (bagian 7). Jangan mengubah seeder untuk ini kecuali pemilik meminta. |
 
 Bila langkah berikutnya butuh keputusan yang belum ada, **ajukan satu pertanyaan** dan tawarkan default yang aman.
 
 ## 9. Masalah yang diketahui / belum dikerjakan
 
-1. **Aturan "tidak menyentuh tagihan sendiri" dan hak Editor di Iuran belum ada** (E2). Sampai itu, `manageInvoices` hanya Admin, jadi Admin yang ditagih (`is_billable=true`) bisa melunasi tagihannya sendiri.
-2. **Pengajuan bayar dan bukti belum ada** (E3). Anggota belum bisa mengajukan pembayaran; semua pelunasan lewat Admin.
-3. **Belum diketahui apakah `is_billable` bisa diubah dari halaman Anggota** (`members/index`, `UpdateMemberRequest`). Bila belum, Admin tidak bisa ikut ditagih lewat UI (E2).
+1. ~~Aturan tagihan sendiri dan hak Editor di Iuran~~ **Selesai di E2.**
+2. **Pengajuan bayar dan bukti belum ada** (E3). Anggota belum bisa mengajukan pembayaran; semua pelunasan lewat Admin/Editor.
+3. ~~`is_billable` dari halaman Anggota~~ **Sudah ada** (E2 menambah log).
 4. **`ActivityLog`:** pindahkan `InvitationController::log()` (privat lama) ke `ActivityLogger`; periksa apakah pembuatan organisasi tercatat; modul baru wajib memakai `ActivityLogger`.
 5. **Non-anggota mendapat 403 untuk organisasi yang ada dan 404 untuk yang tidak ada** (ID bisa ditebak). Usulan: 404 untuk keduanya.
 6. **`OwnerSeeder`** memakai kata sandi tetap dan dipanggil tanpa syarat: jangan `db:seed` di server sungguhan sebelum diberi syarat lingkungan.
@@ -261,14 +264,17 @@ Bila langkah berikutnya butuh keputusan yang belum ada, **ajukan satu pertanyaan
 14. **`OrganizationPolicy::hasRole`** satu query per pemeriksaan; dashboard memanggil ±6 `@can`. Pertimbangkan `currentMember` atau cache per request.
 15. **`.env` pernah tertempel di percakapan Claude** (memuat `APP_KEY` dan `DB_PASSWORD`). Disarankan `php artisan key:generate` dan ganti kata sandi `kaskita_user`, lalu `optimize:clear`. Jangan tempel `.env`.
 16. **`BEM26KAS` permanen** (seeder): hanya untuk demo.
-17. **Kode Langkah C (Pemandu) dan D (sesi Claude ketiga) belum ditinjau sesi lain**; D dan E1 belum lewat uji mutasi penuh (opsional).
+17. **Kode Langkah C (Pemandu), D, E1, E2 belum ditinjau sesi lain**; D, E1 (sebagian), E2 belum lewat uji mutasi penuh (opsional).
 18. **Lampiran nota transaksi belum ada** (menyusul setelah E3; D10).
 19. **Pencarian transaksi (`q`)** memperlakukan `%` dan `_` sebagai wildcard; perbaikan: `addcslashes($filters['q'], '%_\\')`. Dampak kecil.
 20. **Form "Tambah transaksi" ikut terbuka** bila filter `type` tidak valid (kunci galat sama). Kosmetik.
-21. **Belum dicoba di browser:** Undangan, Anggota, Keluar, Kategori, alur Transaksi, Iuran.
+21. **Belum dicoba di browser:** Undangan, Anggota, Keluar, Kategori, alur Transaksi, alur Iuran selain yang tercatat di bagian 7.
 22. **Pelunasan tunai mengisi `tanggal` transaksi dengan hari ini** (`now()`), bukan tanggal pembayaran yang sebenarnya; tidak ada input tanggal. Zona waktu UTC (D8) bisa menggeser tanggal di sekitar tengah malam WIB.
 23. **Tampilan halaman Transaksi tampak melebar penuh dan tanpa kontainer** pada tangkapan layar pemilik. Dugaan: `npm run dev` tidak berjalan atau CSS belum ter-build. **Belum dikonfirmasi.**
-24. **Organisasi tanpa pengelola kedua:** tagihan Admin yang ditagih akan menggantung (E2 menambah pesan).
+24. ~~Organisasi tanpa pengelola kedua~~ **Ditangani di E2** (pesan di halaman Iuran).
+25. ~~Seeder: Nadia dan Rafi tidak ditagih~~ **Diputuskan dibiarkan (D12).** Perilaku benar, bukan bug.
+26. ~~Seeder tertempel dua kali~~ **Dicek: blok "Akun demo" hanya satu di file asli.** Hanya salah tempel.
+27. **Komentar basi di `routes/web.php`** pada blok Iuran: masih tertulis "Admin semua tagihan… hanya Admin mengelola"; sebenarnya Admin + Editor (E2). Perbaiki komentarnya saat file itu disentuh (E3 menambah rute).
 
 ## 10. Aturan kerja (ringkas)
 
@@ -293,27 +299,28 @@ Bila langkah berikutnya butuh keputusan yang belum ada, **ajukan satu pertanyaan
 | 6 Nov | **Langkah B:** kelola undangan (`InvitationController`, request, view, 15 tes); lima uji mutasi. | 81 |
 | 7 Nov | **Langkah C:** kelola anggota (Pemandu; belum ditinjau): `ActivityLogger`, `MemberController`, request, view, 19 tes; tombol Keluar. | 100 |
 | 11 Nov | **Langkah D** (sesi Claude ketiga; kode dibaca, tidak dijalankan): Category/Transaction controller + request + view + 25 tes; Policy `viewTransactions`; dashboard dapat tautan; `dashboard.blade.php` bawaan dihapus; `amount` terkonfirmasi `bigint`. | 125 (797) |
-| 11 Nov | **Langkah E1:** `InvoiceController`, `StoreInvoiceRequest`, `invoices/index`, `InvoiceManagementTest` (16); `Invoice` (konstanta, `inOrganization`, `labelFor`); Policy `viewInvoices`; `routes/web.php` (+4 rute, `invitations.regenerate` dipindah ke blok undangan); dashboard (+tautan Iuran); seeder (keterangan tanpa nama). Pint merapikan 6 file. Satu uji mutasi berhasil. Dikonfirmasi pemilik: **141 lulus (899)**. **Belum diverifikasi:** alur Iuran di browser. Koreksi: Claude sempat menulis 140; yang benar 141 (tes Iuran 16, bukan 15). Kesepakatan desain (D1 revisi, D3, D10 revisi, D11) tercatat di bagian 8. | **141 (899)** |
+| 11 Nov | **Langkah E1:** `InvoiceController`, `StoreInvoiceRequest`, `invoices/index`, `InvoiceManagementTest` (16); `Invoice` (konstanta, `inOrganization`, `labelFor`); Policy `viewInvoices`; `routes/web.php` (+4 rute); dashboard (+tautan Iuran); seeder (keterangan tanpa nama). Satu uji mutasi berhasil. Kesepakatan desain (D1 revisi, D3, D10 revisi, D11) tercatat di bagian 8. | 141 (899) |
+| 11 Nov | **Langkah E2:** Policy `manageInvoices` = Admin + Editor; `InvoiceController` (`isOwn()`, penolakan tagihan sendiri di `payCash`/`cancel`, `$hasOtherManager`); view Iuran (tanda "(tagihanmu)", tanpa tombol, keterangan pengelola lain); `MemberController::update` mencatat `member.billable_changed`; `OrganizationPolicyTest` dan `InvoiceManagementTest` disesuaikan (+7 tes); `MemberBillableTest` baru (2). Pint merapikan 6 file. **Dikonfirmasi pemilik: 150 lulus (955).** Browser: Dimas tidak bisa melunasi tagihan sendiri; Nadia/Rafi tanpa tagihan karena `is_billable=false` di seeder (bukan bug). **Uji mutasi E2 belum dilakukan.** Kode belum ditinjau sesi lain. | **150 (955)** |
+| 11 Nov | **Penutup E1–E2:** dikomit pemilik (`d1f22e8`), belum di-push. Keputusan D12 (seeder Nadia/Rafi dibiarkan). Dicek: seeder hanya satu blok "Akun demo". Tidak ada perubahan kode. | 150 (955) |
 
 Perintah pemilik setelah menyalin serahan: salin file → `composer update --lock` (bila `composer.json` berubah) → `php artisan migrate:fresh --seed` (bila migrasi atau seeder berubah) → `php artisan optimize:clear` → `php artisan test`. Pemilik melaporkan baris `Tests: N passed (M assertions)`; catat angka sebenarnya di bagian 11.
 
 ## 12. Langkah berikutnya (urut; satu langkah per percakapan)
 
-**Langkah A–D: SELESAI** (D kecuali lampiran nota; lihat D10 dan masalah 18). **Langkah E1: SELESAI** (tes hijau; browser belum).
+**Langkah A–D: SELESAI** (D kecuali lampiran nota; lihat D10 dan masalah 18). **E1 dan E2: SELESAI dan dikomit** (tes hijau; browser sebagian).
 
-**Langkah E2 — Hak Iuran (Editor dan "tidak menyentuh tagihan sendiri")** ← *berikutnya*
-- **Sebelum menulis kode, minta pemilik menempel:** `app/Http/Controllers/InvoiceController.php` (versi setelah Pint), `app/Http/Controllers/MemberController.php`, `app/Http/Requests/UpdateMemberRequest.php`, `StoreMemberRequest.php`, `resources/views/members/index.blade.php`, `resources/views/invoices/index.blade.php` bila pemilik mengubahnya.
-- **Policy:** `manageInvoices` menjadi Admin + Editor. Perbarui `OrganizationPolicyTest` (matriks: Editor `manageInvoices` = true) dan tes Iuran yang mengasumsikan Editor ditolak (`tombol mengikuti peran`, `hanya admin boleh membuat tagihan`, `editor dan anggota tidak bisa melunasi atau membatalkan`; Anggota dan non-anggota tetap ditolak).
-- **Aturan di `InvoiceController` (`payCash`, `cancel`):** tolak (galat `invoice` dengan pesan jelas; default, bisa diganti 403) bila `member.user_id` = pengguna yang bertindak. Di view: sembunyikan tombol pada tagihan sendiri dan tampilkan keterangan "Menunggu diverifikasi pengelola lain". Pesan khusus bila organisasi tidak punya pengelola lain.
-- **`is_billable` dari halaman Anggota** (Admin mengubah apakah seseorang ditagih), bila belum ada; tercatat di `ActivityLogger`.
-- **Tes:** Editor membuat tagihan, melunasi tagihan orang lain, membatalkan tagihan orang lain; Admin dan Editor **tidak bisa** melunasi/membatalkan tagihannya sendiri; skenario dua orang (Admin dan Editor saling memverifikasi); pesan untuk organisasi tanpa pengelola lain; Anggota tetap tanpa tombol; mutasi opsional: hapus pemeriksaan "tagihan sendiri" → tepat satu tes gagal.
-- Perbarui bagian 6 (matriks), 8 (D1 diterapkan), 9.
-
-**Langkah E3 — Pengajuan pembayaran dan bukti**
-- **Sebelum menulis kode, minta pemilik menempel:** `config/filesystems.php` (disk privat), view `invoices/index`, `InvoiceController` terbaru.
-- Sesuai D11: aksi Anggota (pemilik tagihan) **"Saya sudah bayar"** (transfer/tunai, bukti opsional) → `menunggu`; tambah/ganti/hapus bukti dan tarik pengajuan selama `menunggu`; verifikator **setujui** (`lunas` + transaksi otomatis, memakai logika `payCash`) atau **tolak** dengan alasan (kembali `belum`, `rejection_reason` tampil); bukti terkunci setelah lunas. Unduh bukti lewat rute yang dicek hak. File lama dihapus saat diganti. `Storage::fake` di tes. Aturan "tidak memverifikasi tagihan sendiri" berlaku juga untuk setujui/tolak.
+**Langkah E3 — Pengajuan pembayaran dan bukti** ← *berikutnya*
+- **Tidak ada keputusan yang menghalangi** (D11 dan D12 sudah ada). Seeder: **jangan** ubah Nadia/Rafi (D12).
+- **Sebelum menulis kode, minta pemilik menempel (per kelompok kecil):**
+  - Kelompok 1: `routes/web.php`, `app/Http/Controllers/InvoiceController.php`, `app/Http/Requests/StoreInvoiceRequest.php`
+  - Kelompok 2: `resources/views/invoices/index.blade.php`, `app/Models/Invoice.php`, `database/seeders/DemoOrganizationSeeder.php`
+  - (`config/filesystems.php` sudah diketahui: disk `local` → `storage/app/private`, bawaan Laravel; tidak perlu ditempel lagi kecuali diubah.)
+  - Contoh perintah: `for f in <file1> <file2> <file3>; do echo "=== $f ==="; cat "$f"; echo; done`
+- Sesuai D11: aksi Anggota (pemilik tagihan) **"Saya sudah bayar"** (transfer/tunai, bukti opsional) → `menunggu`; tambah/ganti/hapus bukti dan tarik pengajuan selama `menunggu`; verifikator **setujui** (`lunas` + transaksi otomatis, memakai logika `payCash`; sebaiknya pindahkan logika itu ke metode privat/model agar dipakai bersama) atau **tolak** dengan alasan (kembali `belum`, `rejection_reason` tampil); bukti terkunci setelah lunas. Unduh bukti lewat rute yang dicek hak (pemilik tagihan atau verifikator). File lama dihapus saat diganti. `Storage::fake` di tes. **Aturan `isOwn` berlaku juga untuk setujui/tolak**; pemilik tagihan tetap boleh mengajukan tagihannya sendiri, termasuk Admin/Editor yang ditagih. Tambah `Invoice::METHOD_TRANSFER`.
+- Tampilan: view Iuran untuk Anggota perlu tombol "Saya sudah bayar" dan teks "Untuk saat ini pelunasan dicatat oleh Admin atau Editor…" harus diganti. Verifikator melihat label "tanpa bukti" bila `proof_path` kosong.
 - Seeder: berkas bukti fiktif Budi → tampilan "berkas tidak tersedia" (jangan error).
-- Tes: pengajuan tanpa/dengan bukti, ganti bukti menghapus file lama, tolak jenis/ukuran tidak valid, hanya pemilik mengajukan (Anggota lain 403/404), organisasi lain 404, unduh hanya pemilik atau verifikator, bukti terkunci setelah lunas, tolak lalu ajukan ulang.
+- Tes: pengajuan tanpa/dengan bukti, ganti bukti menghapus file lama, tolak jenis/ukuran tidak valid, hanya pemilik mengajukan (Anggota lain 403/404), organisasi lain 404, unduh hanya pemilik atau verifikator, bukti terkunci setelah lunas, tolak lalu ajukan ulang, Admin/Editor tidak bisa menyetujui atau menolak pengajuan sendiri.
+- Perbaiki komentar basi di `routes/web.php` (masalah 27) sekalian.
 
 **Langkah F — Laporan dan tutup buku**
 Gerbang `viewReports`/`viewArrears`. Filter bulan dan minggu (minggu dipotong di batas bulan), saldo awal periode = `opening_balance` + transaksi sebelum periode, CSV dan PDF, `PeriodClosure` (bulan ditutup tidak bisa diedit; menyentuh `TransactionController` dan Iuran).
@@ -324,4 +331,4 @@ Gerbang `viewReports`/`viewArrears`. Filter bulan dan minggu (minggu dipotong di
 **Langkah H — Tampilan (Tahap 5) dan penyempurnaan**
 View prototipe halaman demi halaman (putuskan D7), navigasi/sidebar organisasi, terjemahkan teks Breeze, atur D8, perbarui `README.md`, hapus `welcome.blade.php`, syarat lingkungan untuk `OwnerSeeder`, uji di MariaDB, lampiran nota transaksi (D10), pertimbangkan Pull Request ke `main` (perhatikan GitHub Pages).
 
-**Peta halaman prototipe → Laravel:** `organisasi.html`→`organizations.index` (ada) · `dashboard.html`→`organizations.dashboard` (dasar) · `transaksi.html`→`TransactionController` (ada) · `iuran.html`→`InvoiceController` (E1 ada; E2–E3 menyusul) · `anggota.html`→`MemberController` + `InvitationController` (ada) · `laporan.html`→`ReportController` · `pengaturan.html`→pengaturan organisasi + `CategoryController` (kategori ada) · `owner.html`→`Owner\OrganizationController`.
+**Peta halaman prototipe → Laravel:** `organisasi.html`→`organizations.index` (ada) · `dashboard.html`→`organizations.dashboard` (dasar) · `transaksi.html`→`TransactionController` (ada) · `iuran.html`→`InvoiceController` (E1–E2 ada; E3 menyusul) · `anggota.html`→`MemberController` + `InvitationController` (ada) · `laporan.html`→`ReportController` · `pengaturan.html`→pengaturan organisasi + `CategoryController` (kategori ada) · `owner.html`→`Owner\OrganizationController`.
