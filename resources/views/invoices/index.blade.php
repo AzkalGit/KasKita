@@ -4,6 +4,7 @@
         'menunggu' => ['Menunggu verifikasi', 'bg-yellow-100 text-yellow-800'],
         'belum' => ['Belum dibayar', 'bg-red-100 text-red-700'],
     ];
+    $methodLabel = ['transfer' => 'Transfer', 'tunai' => 'Tunai'];
 @endphp
 
 <x-app-layout>
@@ -19,8 +20,10 @@
             @if (session('status'))
                 <div class="p-4 bg-green-50 text-green-800 rounded">{{ session('status') }}</div>
             @endif
-            @if ($errors->has('invoice'))
-                <div class="p-4 bg-red-50 text-red-800 rounded">{{ $errors->first('invoice') }}</div>
+            @if ($errors->hasAny(['invoice', 'proof', 'method', 'reason']))
+                <div class="p-4 bg-red-50 text-red-800 rounded">
+                    {{ $errors->first('invoice') ?: ($errors->first('proof') ?: ($errors->first('method') ?: $errors->first('reason'))) }}
+                </div>
             @endif
 
             @if ($canManage)
@@ -83,7 +86,7 @@
                     <div class="bg-white shadow sm:rounded-lg p-6">
                         <h3 class="font-semibold">Cara membayar</h3>
                         <p class="text-sm text-gray-600 mt-1">{{ $organization->payment_info }}</p>
-                        <p class="text-sm text-gray-500 mt-2">Untuk saat ini pelunasan dicatat oleh Admin atau Editor setelah pembayaran diterima.</p>
+                        <p class="text-sm text-gray-500 mt-2">Setelah membayar, tekan "Saya sudah bayar" pada tagihanmu di bawah. Admin atau Editor akan memeriksanya.</p>
                     </div>
                 @endif
             @endif
@@ -100,9 +103,8 @@
 
                 @forelse ($invoices as $inv)
                     @php
-                        // E2: pengelola tidak boleh menyentuh tagihannya sendiri
-                        $isOwn = $canManage
-                            && $inv->member->user_id !== null
+                        // Pemilik tagihan = akun yang sedang login (Anggota biasa, atau Admin/Editor yang ditagih)
+                        $isOwn = $inv->member->user_id !== null
                             && (int) $inv->member->user_id === (int) auth()->id();
                     @endphp
                     <div class="border-b py-3 last:border-0">
@@ -134,6 +136,7 @@
                             </div>
                         </div>
 
+                        {{-- Pengelola: verifikasi tagihan orang lain --}}
                         @if ($canManage)
                             @if ($isOwn)
                                 <div class="mt-2 text-sm text-gray-500">
@@ -147,7 +150,32 @@
                                     @endif
                                 </div>
                             @else
-                                <div class="mt-2 flex items-center gap-4 text-sm">
+                                @if ($inv->status === 'menunggu')
+                                    <div class="mt-2 text-sm text-gray-700">
+                                        Diajukan lewat <strong>{{ $methodLabel[$inv->method] ?? $inv->method }}</strong> ·
+                                        @include('invoices._proof')
+                                    </div>
+                                @elseif ($inv->status === 'lunas' && $inv->proof_path)
+                                    <div class="mt-2 text-sm text-gray-700">@include('invoices._proof')</div>
+                                @elseif ($inv->status === 'belum' && $inv->rejection_reason)
+                                    <div class="mt-2 text-sm text-red-700">Pengajuan sebelumnya ditolak: {{ $inv->rejection_reason }}</div>
+                                @endif
+
+                                <div class="mt-2 flex flex-wrap items-start gap-4 text-sm">
+                                    @if ($inv->status === 'menunggu')
+                                        <form method="POST" action="{{ route('invoices.approve', [$organization, $inv->id]) }}"
+                                              onsubmit="return confirm({{ Js::from('Setujui pengajuan iuran '.$inv->member->name.' dan catat sebagai lunas?') }})">
+                                            @csrf @method('PATCH')
+                                            <button class="text-green-700 font-medium">Setujui</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('invoices.reject', [$organization, $inv->id]) }}" class="flex items-center gap-2">
+                                            @csrf @method('PATCH')
+                                            <input type="text" name="reason" maxlength="255" placeholder="Alasan penolakan" required
+                                                   class="border-gray-300 rounded-md shadow-sm text-sm">
+                                            <button class="text-red-600 font-medium">Tolak</button>
+                                        </form>
+                                    @endif
+
                                     @if (! $inv->isPaid())
                                         <form method="POST" action="{{ route('invoices.pay_cash', [$organization, $inv->id]) }}"
                                               onsubmit="return confirm({{ Js::from('Catat iuran '.$inv->member->name.' sebagai lunas tunai?') }})">
@@ -162,6 +190,61 @@
                                         </form>
                                     @endif
                                 </div>
+                            @endif
+                        @endif
+
+                        {{-- Pemilik tagihan: ajukan pembayaran dan urus bukti --}}
+                        @if ($isOwn)
+                            @if ($inv->status === 'belum')
+                                @if ($inv->rejection_reason)
+                                    <div class="mt-3 text-sm text-red-700">
+                                        Pengajuanmu ditolak: {{ $inv->rejection_reason }}. Kamu bisa mengajukan ulang.
+                                    </div>
+                                @endif
+                                <form method="POST" action="{{ route('invoices.submit', [$organization, $inv->id]) }}"
+                                      enctype="multipart/form-data"
+                                      class="mt-3 flex flex-wrap items-end gap-3 text-sm">
+                                    @csrf
+                                    <div>
+                                        <label for="method_{{ $inv->id }}" class="block text-gray-600">Cara bayar</label>
+                                        <select id="method_{{ $inv->id }}" name="method" class="border-gray-300 rounded-md shadow-sm text-sm">
+                                            <option value="transfer">Transfer</option>
+                                            <option value="tunai">Tunai</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="proof_{{ $inv->id }}" class="block text-gray-600">Bukti (opsional; JPG, PNG, atau PDF, maks. 2 MB)</label>
+                                        <input id="proof_{{ $inv->id }}" type="file" name="proof" accept=".jpg,.jpeg,.png,.pdf">
+                                    </div>
+                                    <x-primary-button>Saya sudah bayar</x-primary-button>
+                                </form>
+                            @elseif ($inv->status === 'menunggu')
+                                <div class="mt-3 text-sm text-gray-700">
+                                    Pengajuanmu ({{ $methodLabel[$inv->method] ?? $inv->method }}) menunggu diperiksa pengelola ·
+                                    @include('invoices._proof')
+                                </div>
+                                <div class="mt-2 flex flex-wrap items-end gap-4 text-sm">
+                                    <form method="POST" action="{{ route('invoices.proof_store', [$organization, $inv->id]) }}"
+                                          enctype="multipart/form-data" class="flex items-center gap-2">
+                                        @csrf
+                                        <input type="file" name="proof" accept=".jpg,.jpeg,.png,.pdf" required>
+                                        <button class="text-indigo-600 font-medium">{{ $inv->proof_path ? 'Ganti bukti' : 'Tambah bukti' }}</button>
+                                    </form>
+                                    @if ($inv->proof_path)
+                                        <form method="POST" action="{{ route('invoices.proof_destroy', [$organization, $inv->id]) }}"
+                                              onsubmit="return confirm('Hapus bukti pembayaran ini?')">
+                                            @csrf @method('DELETE')
+                                            <button class="text-red-600 font-medium">Hapus bukti</button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('invoices.withdraw', [$organization, $inv->id]) }}"
+                                          onsubmit="return confirm('Tarik pengajuan ini? Buktinya ikut dihapus.')">
+                                        @csrf @method('PATCH')
+                                        <button class="text-gray-600 font-medium">Tarik pengajuan</button>
+                                    </form>
+                                </div>
+                            @elseif ($inv->proof_path)
+                                <div class="mt-3 text-sm text-gray-700">@include('invoices._proof')</div>
                             @endif
                         @endif
                     </div>

@@ -69,12 +69,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/transaksi/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
             Route::delete('/transaksi/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
 
-            // Iuran: semua anggota aktif melihat (Admin semua tagihan, lainnya hanya miliknya); hanya Admin mengelola.
+            // Iuran: semua anggota aktif melihat (Admin/Editor semua tagihan satu periode, Anggota hanya miliknya).
+            // Admin dan Editor (Policy 'manageInvoices') membuat tagihan, melunasi tunai, membatalkan, menyetujui/menolak
+            // pengajuan, kecuali tagihan mereka sendiri. Pemilik tagihan mengajukan pembayaran dan mengurus buktinya.
             // {invoice} dicari manual di controller karena tagihan tidak punya organization_id (organisasi lain = 404).
             Route::get('/iuran', [InvoiceController::class, 'index'])->name('invoices.index');
             Route::post('/iuran', [InvoiceController::class, 'store'])->name('invoices.store');
             Route::patch('/iuran/{invoice}/lunas-tunai', [InvoiceController::class, 'payCash'])->whereNumber('invoice')->name('invoices.pay_cash');
             Route::patch('/iuran/{invoice}/batalkan', [InvoiceController::class, 'cancel'])->whereNumber('invoice')->name('invoices.cancel');
+            Route::patch('/iuran/{invoice}/setujui', [InvoiceController::class, 'approve'])->whereNumber('invoice')->name('invoices.approve');
+            Route::patch('/iuran/{invoice}/tolak', [InvoiceController::class, 'reject'])->whereNumber('invoice')->name('invoices.reject');
+            Route::post('/iuran/{invoice}/ajukan', [InvoiceController::class, 'submit'])->whereNumber('invoice')->name('invoices.submit');
+            Route::patch('/iuran/{invoice}/tarik', [InvoiceController::class, 'withdraw'])->whereNumber('invoice')->name('invoices.withdraw');
+            Route::get('/iuran/{invoice}/bukti', [InvoiceController::class, 'proof'])->whereNumber('invoice')->name('invoices.proof_download');
+            Route::post('/iuran/{invoice}/bukti', [InvoiceController::class, 'storeProof'])->whereNumber('invoice')->name('invoices.proof_store');
+            Route::delete('/iuran/{invoice}/bukti', [InvoiceController::class, 'destroyProof'])->whereNumber('invoice')->name('invoices.proof_destroy');
         });
 });
 
