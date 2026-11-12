@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\PeriodClosedException;
 use App\Http\Requests\ProofRequest;
 use App\Http\Requests\RejectInvoiceRequest;
 use App\Http\Requests\StoreInvoiceRequest;
@@ -148,13 +149,17 @@ class InvoiceController extends Controller
             return $this->refuse($organization, self::OWN_INVOICE_MESSAGE, $found->period);
         }
 
-        $paid = Invoice::settle(
-            $found->id,
-            $organization,
-            $request->user(),
-            Invoice::METHOD_TUNAI,
-            [Invoice::STATUS_BELUM, Invoice::STATUS_MENUNGGU],
-        );
+        try {
+            $paid = Invoice::settle(
+                $found->id,
+                $organization,
+                $request->user(),
+                Invoice::METHOD_TUNAI,
+                [Invoice::STATUS_BELUM, Invoice::STATUS_MENUNGGU],
+            );
+        } catch (PeriodClosedException $e) {
+            return $this->refuse($organization, $e->getMessage(), $found->period);
+        }
 
         if ($paid === null) {
             return $this->refuse($organization, 'Tagihan ini sudah lunas.', $found->period);
@@ -180,11 +185,21 @@ class InvoiceController extends Controller
             return $this->refuse($organization, self::OWN_INVOICE_MESSAGE, $found->period);
         }
 
-        $result = DB::transaction(function () use ($found) {
+        $result = DB::transaction(function () use ($found, $organization) {
             $locked = Invoice::whereKey($found->id)->lockForUpdate()->first();
 
             if (! $locked->isPaid()) {
                 return null;
+            }
+
+            // F2: transaksi iuran yang akan dihapus tidak boleh ada di bulan tertutup
+            $inClosedMonth = Transaction::withTrashed()
+                ->where('invoice_id', $locked->id)
+                ->get()
+                ->contains(fn ($t) => $organization->isPeriodClosed($t->tanggal->toDateString()));
+
+            if ($inClosedMonth) {
+                return 'closed';
             }
 
             $oldProof = $locked->proof_path;
@@ -206,6 +221,10 @@ class InvoiceController extends Controller
 
         if ($result === null) {
             return $this->refuse($organization, 'Hanya tagihan yang sudah lunas yang bisa dibatalkan pelunasannya.', $found->period);
+        }
+
+        if ($result === 'closed') {
+            return $this->refuse($organization, 'Pelunasan ini tercatat di bulan yang sudah ditutup, jadi tidak bisa dibatalkan. Minta Admin membuka kembali bulan itu di halaman Laporan.', $found->period);
         }
 
         [$reverted, $oldProof] = $result;
@@ -232,7 +251,11 @@ class InvoiceController extends Controller
         }
 
         // method null = pakai cara bayar yang diajukan anggota (transfer/tunai)
-        $paid = Invoice::settle($found->id, $organization, $request->user(), null, [Invoice::STATUS_MENUNGGU]);
+        try {
+            $paid = Invoice::settle($found->id, $organization, $request->user(), null, [Invoice::STATUS_MENUNGGU]);
+        } catch (PeriodClosedException $e) {
+            return $this->refuse($organization, $e->getMessage(), $found->period);
+        }
 
         if ($paid === null) {
             return $this->refuse($organization, 'Pengajuan ini sudah tidak menunggu verifikasi.', $found->period);

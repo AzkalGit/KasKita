@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\PeriodClosedException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -91,6 +92,12 @@ class Invoice extends Model
                 return null;
             }
 
+            // F2: bulan tempat transaksi iuran dicatat (hari ini) tidak boleh sudah ditutup
+            $tanggal = now()->toDateString();
+            if ($organization->isPeriodClosed($tanggal)) {
+                throw new PeriodClosedException(substr($tanggal, 0, 7));
+            }
+
             $locked->update([
                 'status' => self::STATUS_LUNAS,
                 'method' => $method ?? $locked->method,
@@ -108,7 +115,7 @@ class Invoice extends Model
                 'created_by' => $actor->id,
                 'type' => 'masuk',
                 'amount' => $locked->amount,
-                'tanggal' => now()->toDateString(),
+                'tanggal' => $tanggal,
                 'description' => 'Iuran '.self::labelFor($locked->period),
             ]);
 

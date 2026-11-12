@@ -45,6 +45,45 @@
 
             <div class="text-sm text-gray-600">Periode: <span class="font-semibold">{{ $label }}</span></div>
 
+            {{-- Status tutup buku untuk bulan yang dipilih --}}
+            <div class="bg-white shadow sm:rounded-lg p-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                @if ($closure)
+                    <div>
+                        <span class="inline-block px-2 py-0.5 rounded bg-gray-200 text-gray-700 font-semibold">Buku ditutup</span>
+                        <span class="text-gray-600 ml-2">
+                            {{ \App\Models\Invoice::labelFor($month) }} ditutup {{ $closure->closed_at->format('d/m/Y H:i') }}@if ($closure->closer) oleh {{ $closure->closer->name }}@endif.
+                            Transaksi bulan ini tidak bisa ditambah, diubah, atau dihapus.
+                        </span>
+                    </div>
+                    @if ($canClose)
+                        <form method="POST" action="{{ route('periods.reopen', [$organization, $month]) }}"
+                              onsubmit="return confirm('Buka kembali buku bulan ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    class="px-3 py-1.5 border border-gray-400 text-gray-700 rounded-md font-semibold hover:bg-gray-50">
+                                Buka kembali
+                            </button>
+                        </form>
+                    @endif
+                @else
+                    <div class="text-gray-600">Buku {{ \App\Models\Invoice::labelFor($month) }} masih terbuka.</div>
+                    @if ($canClose && $isPastMonth)
+                        <form method="POST" action="{{ route('periods.close', $organization) }}"
+                              onsubmit="return confirm('Tutup buku bulan ini? Transaksi bulan ini tidak bisa diubah lagi sampai dibuka kembali.')">
+                            @csrf
+                            <input type="hidden" name="period" value="{{ $month }}">
+                            <button type="submit"
+                                    class="px-3 py-1.5 bg-indigo-600 text-white rounded-md font-semibold hover:bg-indigo-700">
+                                Tutup buku
+                            </button>
+                        </form>
+                    @elseif ($canClose)
+                        <span class="text-gray-500">Bulan berjalan belum bisa ditutup.</span>
+                    @endif
+                @endif
+            </div>
+
             {{-- Ringkasan --}}
             <div class="grid md:grid-cols-4 gap-4">
                 <div class="bg-white shadow sm:rounded-lg p-6">

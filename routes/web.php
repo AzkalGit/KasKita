@@ -6,6 +6,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationDashboardController;
+use App\Http\Controllers\PeriodClosureController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
@@ -88,6 +89,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Laporan: Admin + Editor (Policy 'viewReports'); tunggakan di dalamnya hanya untuk Admin ('viewArrears')
             Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
             Route::get('/laporan/unduh', [ReportController::class, 'download'])->name('reports.download');
+            // Tutup buku: khusus Admin (Policy 'closePeriods'); hanya bulan yang sudah berlalu yang bisa ditutup
+            Route::post('/laporan/tutup', [PeriodClosureController::class, 'store'])->name('periods.close');
+            Route::delete('/laporan/tutup/{period}', [PeriodClosureController::class, 'destroy'])
+                ->where('period', '20\d{2}-(0[1-9]|1[0-2])')->name('periods.reopen');
         });
 });
 

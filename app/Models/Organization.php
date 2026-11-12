@@ -56,6 +56,12 @@ class Organization extends Model
         return $this->hasMany(PeriodClosure::class);
     }
 
+    // F2: apakah bulan dari tanggal ini ('Y-m-d' atau 'Y-m') sudah ditutup bukunya?
+    public function isPeriodClosed(string $date): bool
+    {
+        return $this->periodClosures()->where('period', substr($date, 0, 7))->exists();
+    }
+
     /**
      * Hapus organisasi beserta seluruh datanya.
      *

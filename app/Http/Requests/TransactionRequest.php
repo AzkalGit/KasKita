@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,15 @@ class TransactionRequest extends FormRequest
                 ),
             ],
             'amount' => ['required', 'integer', 'min:1', 'max:100000000000'],
-            'tanggal' => ['required', 'date_format:Y-m-d', 'after_or_equal:2000-01-01'],
+            'tanggal' => [
+                'bail', 'required', 'date_format:Y-m-d', 'after_or_equal:2000-01-01',
+                // F2: tanggal baru tidak boleh jatuh di bulan yang sudah ditutup
+                function (string $attribute, mixed $value, Closure $fail) use ($organization) {
+                    if ($organization->isPeriodClosed($value)) {
+                        $fail('Bulan itu sudah ditutup. Minta Admin membuka kembali bulan itu di halaman Laporan.');
+                    }
+                },
+            ],
             'description' => ['required', 'string', 'max:255'],
         ];
     }

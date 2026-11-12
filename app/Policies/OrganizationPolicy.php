@@ -77,4 +77,10 @@ class OrganizationPolicy
     {
         return $this->hasRole($user, $organization, M::ROLE_ADMIN);
     }
+
+    // F2: menutup dan membuka kembali buku bulanan
+    public function closePeriods(User $user, Organization $organization): bool
+    {
+        return $this->hasRole($user, $organization, M::ROLE_ADMIN);
+    }
 }

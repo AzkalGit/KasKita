@@ -62,6 +62,9 @@ class ReportController extends Controller
                 ->get();
         }
 
+        // F2: status tutup buku untuk bulan yang dipilih
+        $closure = $organization->periodClosures()->with('closer')->where('period', $p['month'])->first();
+
         return view('reports.index', [
             'organization' => $organization,
             'month' => $p['month'],
@@ -75,6 +78,9 @@ class ReportController extends Controller
             'breakdown' => $breakdown,
             'transactions' => $transactions,
             'arrears' => $arrears,
+            'closure' => $closure,
+            'canClose' => Gate::allows('closePeriods', $organization),
+            'isPastMonth' => $p['month'] < now()->format('Y-m'),
         ]);
     }
 

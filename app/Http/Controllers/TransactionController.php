@@ -14,6 +14,8 @@ use Illuminate\Validation\Rule;
 
 class TransactionController extends Controller
 {
+    private const CLOSED_MESSAGE = 'Transaksi ini ada di bulan yang sudah ditutup, jadi tidak bisa diubah atau dihapus. Minta Admin membuka kembali bulan itu di halaman Laporan.';
+
     public function index(Request $request, Organization $organization)
     {
         Gate::authorize('viewTransactions', $organization);
@@ -85,6 +87,10 @@ class TransactionController extends Controller
             return $this->refuse($organization, 'Transaksi otomatis dari iuran tidak bisa diubah. Batalkan pelunasannya dari halaman Iuran.');
         }
 
+        if ($this->isClosed($organization, $transaction)) {
+            return $this->refuse($organization, self::CLOSED_MESSAGE);
+        }
+
         return view('transactions.edit', [
             'organization' => $organization,
             'transaction' => $transaction,
@@ -96,6 +102,11 @@ class TransactionController extends Controller
     {
         if ($transaction->isLocked()) {
             return $this->refuse($organization, 'Transaksi otomatis dari iuran tidak bisa diubah. Batalkan pelunasannya dari halaman Iuran.');
+        }
+
+        // F2: tanggal LAMA juga tidak boleh di bulan tertutup (mencegah memindahkan transaksi keluar dari sana)
+        if ($this->isClosed($organization, $transaction)) {
+            return $this->refuse($organization, self::CLOSED_MESSAGE);
         }
 
         $transaction->update($request->validated());
@@ -117,6 +128,10 @@ class TransactionController extends Controller
             return $this->refuse($organization, 'Transaksi otomatis dari iuran tidak bisa dihapus. Batalkan pelunasannya dari halaman Iuran.');
         }
 
+        if ($this->isClosed($organization, $transaction)) {
+            return $this->refuse($organization, self::CLOSED_MESSAGE);
+        }
+
         $transaction->delete(); // soft delete: tetap tersimpan, tidak dihitung ke saldo
 
         ActivityLogger::record($organization, $request->user(), 'transaction.deleted', $transaction, [
@@ -126,6 +141,11 @@ class TransactionController extends Controller
         ]);
 
         return $this->done($organization, 'Transaksi dihapus.');
+    }
+
+    private function isClosed(Organization $organization, Transaction $transaction): bool
+    {
+        return $organization->isPeriodClosed($transaction->tanggal->toDateString());
     }
 
     private function manualCategories(Organization $organization)
