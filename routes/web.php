@@ -7,6 +7,7 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationDashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -84,6 +85,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/iuran/{invoice}/bukti', [InvoiceController::class, 'proof'])->whereNumber('invoice')->name('invoices.proof_download');
             Route::post('/iuran/{invoice}/bukti', [InvoiceController::class, 'storeProof'])->whereNumber('invoice')->name('invoices.proof_store');
             Route::delete('/iuran/{invoice}/bukti', [InvoiceController::class, 'destroyProof'])->whereNumber('invoice')->name('invoices.proof_destroy');
+            // Laporan: Admin + Editor (Policy 'viewReports'); tunggakan di dalamnya hanya untuk Admin ('viewArrears')
+            Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
+            Route::get('/laporan/unduh', [ReportController::class, 'download'])->name('reports.download');
         });
 });
 

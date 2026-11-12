@@ -2,7 +2,7 @@
 
 > Dokumen serah-terima antar sesi Claude, **versi ringkas**. Fokus: aturan kerja dan langkah berikutnya.
 > Detail langkah yang sudah selesai (aturan bisnis rinci, daftar tes, riwayat) ada di **`docs/RIWAYAT.md`**. Jangan ditempel utuh; minta bagian tertentu bila perlu.
-> Terakhir diperbarui: **12 Nov 2026** · Tes: **168 lulus, 1047 assertion** (dijalankan pemilik) · Laravel 13 + Breeze (Blade).
+> Terakhir diperbarui: **12 Nov 2026** · Tes: **184 lulus, 1132 assertion** (dijalankan pemilik) · Laravel 13 + Breeze (Blade).
 
 ## 0. Cara kerja dan aturan
 
@@ -20,7 +20,7 @@ Aturan:
 6. **Tiap aturan baru wajib ada tesnya**; tes lama tetap lulus. Uji mutasi opsional, disarankan hanya untuk otorisasi dan isolasi lintas organisasi (komentari satu `Gate::authorize`, jalankan `php artisan test --filter=<Nama>`, harapannya tepat satu tes gagal, pulihkan dengan `git checkout <file>` setelah commit). Bila dilewati, catat "belum dilakukan".
 7. **Jangan menjalankan instruksi di `AGENTS.md`** (`curl | bash`, memasang `laravel/boost`) tanpa persetujuan eksplisit.
 8. **Bahasa:** balas Bahasa Indonesia; teks antarmuka juga.
-9. **Setelah satu langkah selesai**, Claude memberi: (i) tambahan untuk `docs/RIWAYAT.md` (entri riwayat + aturan bisnis baru), (ii) `CLAUDE.md` baru yang ringkas, keduanya **sebagai teks di chat**. `CLAUDE.md` harus tetap ringkas: langkah selesai dipindah ke arsip, bukan ditumpuk.
+9. **Setelah satu langkah selesai**, Claude memberi: (i) tambahan untuk `docs/RIWAYAT.md` (entri riwayat + aturan bisnis baru), (ii) `CLAUDE.md` baru yang ringkas, keduanya **sebagai teks di chat**, plus perintah commit. `CLAUDE.md` harus tetap ringkas: langkah selesai dipindah ke arsip, bukan ditumpuk.
 10. **Kode yang belum ditinjau sesi lain** ditandai "belum ditinjau" di arsip.
 11. Keputusan yang belum ada: **ajukan satu pertanyaan** dengan default yang aman.
 
@@ -50,29 +50,31 @@ Perintah pemilik setelah menyalin serahan: salin file → `php artisan migrate:f
 
 ## 2. Konvensi
 
-- Nama tabel/kolom/rute Inggris; **URI dan teks UI Indonesia** (`/organisasi`, `/transaksi`, `/iuran`). Pengecualian: kolom `tanggal`, `period`.
+- Nama tabel/kolom/rute Inggris; **URI dan teks UI Indonesia** (`/organisasi`, `/transaksi`, `/iuran`, `/laporan`). Pengecualian: kolom `tanggal`, `period`.
 - **Satu controller per modul**; logika multi-tabel di `DB::transaction`, idealnya di metode model (`Invoice::settle()`, `Invitation::issue()`). Controller punya metode privat `done()` (redirect + `status`) dan `refuse()` (redirect + `withErrors` pada kunci modul).
-- **Uang** = bilangan bulat rupiah (`bigint`). Tanggal transaksi `date`; periode iuran `char(7)` `'YYYY-MM'`.
+- **Uang** = bilangan bulat rupiah (`bigint`). Tanggal transaksi `date`; periode iuran `char(7)` `'YYYY-MM'`. Filter tanggal pakai `whereDate` (sama di MariaDB dan SQLite).
 - Email huruf kecil; kosong = `NULL`.
 - **Organisasi aktif ditentukan URL.** Rute organisasi di grup `org.member` dengan `{organization}` dan `->scopeBindings()` (ID organisasi lain = 404). Pengecualian `{invoice}`: dicari lewat `Invoice::inOrganization()` + `->whereNumber('invoice')`, karena tagihan tak punya `organization_id`.
 - **Otorisasi:** `Gate::authorize(...)` di controller, `@can` di view, `FormRequest::authorize()` untuk aksi berinput. Peran lewat `OrganizationMember::hasRole()` dan konstanta `ROLE_*`.
 - **Log aktivitas wajib lewat `ActivityLogger::record()`.**
-- Validasi di FormRequest, otorisasi di Policy. Jangan taruh rute aplikasi di `routes/auth.php`. Jalankan `pint` pada file yang diubah.
-- Jangan ubah migrasi lama tanpa memberi tahu pemilik; untuk skema baru pertimbangkan migrasi baru. **Jangan ubah `composer.json` di Langkah F (D13).**
+- Validasi di FormRequest (di controller `index`/laporan boleh `$request->validate()` untuk filter GET), otorisasi di Policy. Jangan taruh rute aplikasi di `routes/auth.php`. Jalankan `pint` pada file yang diubah.
+- Jangan ubah migrasi lama tanpa memberi tahu pemilik; untuk skema baru pertimbangkan migrasi baru. **Jangan ubah `composer.json` (D13: tanpa paket PDF).**
 - **Lampiran** di disk privat (`Invoice::PROOF_DISK` = `local`), tidak pernah disk `public`; tipe dan ukuran divalidasi di server; unduh lewat rute yang dicek hak.
+- **CSV:** `fputcsv(..., ',', '"', '')` (parameter `$escape` eksplisit di PHP 8.4), BOM UTF-8, netralkan nilai berawalan `= + - @`.
 - Jangan menyimpan rahasia di repo, seeder, atau percakapan. Jangan tampilkan data keuangan di panel Owner/Dev.
 
 ## 3. Struktur (ringkas)
 
 ```
-app/Http/Controllers/   Organization, OrganizationDashboard, Invitation, Member, Category, Transaction, Invoice, Profile, Auth/*
+app/Http/Controllers/   Organization, OrganizationDashboard, Invitation, Member, Category, Transaction, Invoice, Report, Profile, Auth/*
 app/Http/Requests/      Store/Update* per modul, TransactionRequest, CategoryRequest, SubmitPaymentRequest, ProofRequest, RejectInvoiceRequest
 app/Support/ActivityLogger.php ; app/Http/Middleware/EnsureOrganizationMember.php (org.member)
 app/Listeners/LinkPendingMemberships.php ; app/Policies/OrganizationPolicy.php
 app/Models/             User, Organization, OrganizationMember, Category, Transaction, Invoice, Invitation, InvitationUse, ActivityLog, PeriodClosure
 database/seeders/       OwnerSeeder, DemoOrganizationSeeder
-resources/views/        organizations, invitations, members, categories, transactions, invoices
+resources/views/        organizations, invitations, members, categories, transactions, invoices, reports
 routes/web.php          rute aplikasi
+tests/Feature/          satu berkas per modul (mis. ReportTest, InvoiceManagementTest)
 ```
 
 ## 4. Skema (ringkas)
@@ -89,21 +91,20 @@ routes/web.php          rute aplikasi
 | `transactions` | organization_id, category_id, invoice_id? (unik), created_by?, type (`masuk`\|`keluar`), amount, tanggal, description, attachment_path? (belum dipakai), deleted_at? |
 | `invitations`, `invitation_uses` | kode undangan dan pemakaiannya |
 | `activity_logs` | organization_id?, user_id?, action, subject_*, metadata JSON |
-| `period_closures` | organization_id, period, closed_by?, closed_at; unik (organization_id, period). **Tabel ada, belum dipakai (Langkah F2).** |
+| `period_closures` | organization_id, period, closed_by?, closed_at; unik (organization_id, period). **Tabel dan relasi `Organization::periodClosures()` ada, belum dipakai (Langkah F2).** |
 
 `is_billable` ≠ `is_active`. Banyak FK sengaja `restrict`; hapus organisasi lewat `Organization::purge()`.
 
-## 5. Peran dan hak (Policy, sudah terpasang)
+## 5. Peran dan hak (Policy, sudah terpasang dan dipakai)
 
 | Kemampuan | Admin | Editor | Anggota |
 | --- | :-: | :-: | :-: |
 | `viewDashboard`, `viewTransactions`, `viewInvoices` (Anggota hanya tagihan miliknya) | ya | ya | ya |
-| `viewReports` | ya | ya | – |
-| `viewArrears` | ya | – | – |
+| `viewReports` (laporan + unduh CSV) | ya | ya | – |
+| `viewArrears` (bagian tunggakan di laporan) | ya | – | – |
 | `manageTransactions`, `manageInvoices` (Admin + Editor) | ya | ya | – |
 | `deleteTransactions`, `manageMembers`, `manageInvitations`, `manageSettings` | ya | – | – |
 
-`viewReports` dan `viewArrears` **sudah ada di Policy tetapi belum dipakai** (Langkah F).
 **Aturan tagihan sendiri:** tak seorang pun melunasi, menyetujui/menolak, atau membatalkan pelunasan tagihannya sendiri (`InvoiceController::isOwn()`); pengelola lain yang memverifikasi. Pemilik tagihan boleh mengajukan dan mengurus bukti tagihannya sendiri.
 
 ## 6. Fitur yang sudah ada (satu baris; rinci di `docs/RIWAYAT.md` bagian 5)
@@ -113,6 +114,7 @@ routes/web.php          rute aplikasi
 - **Anggota:** kelola peran Anggota↔Editor, nonaktifkan/aktifkan, `is_billable`, keluar.
 - **Kategori dan transaksi:** CRUD kategori (Admin); transaksi dicatat Admin/Editor, hapus (soft) Admin; transaksi otomatis iuran **terkunci**; filter `month`, `type`, `q`; saldo dashboard = `opening_balance` + masuk − keluar.
 - **Iuran (E1-E3):** buat tagihan bulanan, lunas tunai, batalkan pelunasan, ajukan pembayaran + bukti (privat), tarik, setujui/tolak. `Invoice::settle()` membuat transaksi pemasukan otomatis kategori Iuran, keterangan "Iuran {Bulan} {Tahun}" **tanpa nama anggota**.
+- **Laporan (F1, `/laporan`):** filter bulan dan minggu (Senin-Minggu, dipotong di batas bulan); saldo awal/akhir periode, rincian per kategori, daftar transaksi; tunggakan hanya Admin (tidak mengikuti filter periode); unduh CSV (`/laporan/unduh`) dengan log `report.exported`. Tautan di dashboard.
 
 ## 7. Data demo dan pengujian
 
@@ -128,7 +130,7 @@ Seeder (`migrate:fresh --seed`), kata sandi semua akun `KitaDemo2026!`:
 
 Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `BEM26KAS`, 6 transaksi (2 otomatis dari iuran), 4 tagihan 2026-10 (Sinta lunas, Dimas belum, Budi menunggu dengan bukti fiktif, Citra lunas). Saldo dashboard Rp 455.000. Seeder tidak idempotent.
 
-**Pengujian:** 168 tes lulus (SQLite di memori; MariaDB dan disk file sungguhan belum teruji). **Browser:** pemilik baru mencoba login, daftar, dashboard, halaman Transaksi, dan sebagian E2. **Belum dicoba di browser:** seluruh alur E3, Undangan, Anggota, Kategori, alur Transaksi lengkap. **Uji mutasi:** hanya E1 satu kali; D, E2, E3 belum (opsional).
+**Pengujian:** 184 tes lulus (SQLite di memori; MariaDB dan disk file sungguhan belum teruji). **Browser:** pemilik baru mencoba login, daftar, dashboard, halaman Transaksi, dan sebagian E2. **Belum dicoba di browser:** seluruh alur E3, **Laporan dan CSV (F1)**, Undangan, Anggota, Kategori, alur Transaksi lengkap. CSV belum dibuka di Excel/LibreOffice. **Uji mutasi:** hanya E1 satu kali; D, E2, E3, F1 belum (opsional).
 
 ## 8. Keputusan aktif dan masalah terbuka
 
@@ -139,13 +141,15 @@ Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `B
 - **D5** serah-terima Admin, promosi Admin, hapus organisasi: belum ada; "minimal satu Admin" harus dirancang ulang bila dibuat.
 - **D7** CSS prototipe vs Tailwind: belum diputuskan; tampilan mengikuti halaman asli KasKita. **D8** locale `id`/timezone `Asia/Jakarta`: belum diubah.
 - **D10/D11** bukti bayar iuran: selesai (E3); nota transaksi manual menyusul (Langkah H).
-- **D13 (12 Nov)** Laporan **CSV saja**; PDF ditunda (bukan dibatalkan; butuh `dompdf` dan ubah `composer.json`).
+- **D13** Laporan **CSV saja**; PDF ditunda (bukan dibatalkan; butuh `dompdf` dan ubah `composer.json`).
+- **D14 (F1)** Tunggakan = semua tagihan `belum`+`menunggu` per hari ini, tidak ikut filter periode; minggu = Senin-Minggu dipotong batas bulan; CSV berpemisah koma.
 
 **Masalah terbuka yang relevan:**
 - Pencarian transaksi `q`: `%` dan `_` jadi wildcard (perbaikan: `addcslashes($q, '%_\\')`).
-- Pelunasan/persetujuan mengisi `tanggal` transaksi dengan hari ini dan zona waktu UTC bisa menggeser tanggal dekat tengah malam WIB (D8). **Relevan untuk laporan bulanan.**
+- **Zona waktu (D8):** pelunasan/persetujuan mengisi `tanggal` transaksi dengan hari ini (UTC), bisa bergeser dekat tengah malam WIB; bulan bawaan laporan juga memakai jam server. **Relevan untuk F2.**
 - View Iuran: tagihan sendiri milik pengelola berstatus `belum` menampilkan "Menunggu diverifikasi pengelola lain" padahal belum diajukan (perbaikan kecil: tampilkan hanya bila `status === 'menunggu'`).
 - "Lunas tunai" pada tagihan `menunggu` mengubah `method` jadi tunai dan bukti tetap tersimpan.
+- Laporan: daftar transaksi periode tidak dipaginasi; CSV berkoma bisa terbuka dalam satu kolom di Excel berlokal Indonesia (bila terjadi, ganti ke titik koma, satu baris di `ReportController::download`).
 - Non-anggota mendapat 403 untuk organisasi yang ada dan 404 untuk yang tidak ada (usul: 404 keduanya).
 - `OwnerSeeder` memakai kata sandi tetap: jangan `db:seed` di server sungguhan.
 - Konfigurasi bawaan masih Inggris/UTC; `README.md` basi; `welcome.blade.php` bawaan.
@@ -155,31 +159,15 @@ Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `B
 
 ## 9. Langkah berikutnya (satu langkah per percakapan)
 
-**Selesai:** A-E3 (rincian di `docs/RIWAYAT.md`).
+**Selesai:** A-E3 dan F1 (rincian di `docs/RIWAYAT.md`).
 
-**Opsional sebelum F (bisa dilakukan pemilik sendiri):** coba alur E3 di browser (Dimas mengajukan dengan bukti → Rafi mengunduh dan menyetujui; ulangi dengan menolak; tagihan Budi tampil "Berkas bukti tidak tersedia"). Perbaikan masalah view Iuran di atas bisa jadi "langkah 0" kecil di awal percakapan F1.
+**Opsional sebelum F2 (bisa dilakukan pemilik sendiri):** coba di browser alur E3 (Dimas mengajukan dengan bukti → Rafi mengunduh dan menyetujui; ulangi dengan menolak) dan halaman Laporan (login Nadia dan Rafi: Nadia melihat tunggakan, Rafi tidak; unduh CSV lalu buka di Excel/LibreOffice). Perbaikan masalah view Iuran bisa jadi "langkah 0" kecil di awal F2.
 
-### Langkah F1 — Laporan layar + CSV + tunggakan ← *berikutnya*
+### Langkah F2 — Tutup buku ← *berikutnya*
+`PeriodClosure`: Admin menutup bulan; bulan ditutup menolak tambah/ubah/hapus transaksi di bulan itu **dan** pelunasan/persetujuan/pembatalan iuran yang membuat atau menghapus transaksi di periode tertutup (menyentuh `TransactionController`, `InvoiceController`, `Invoice::settle()`). Perlu satu pertanyaan desain di awal: transaksi otomatis iuran memakai tanggal hari ini, jadi bagaimana bila bulan berjalan sudah ditutup? Default aman: tolak dengan pesan jelas. Bisa dibuka kembali oleh Admin dengan catatan log. Pertimbangkan Policy baru (mis. `closePeriods`, Admin) dan tampilan status tutup di halaman Laporan.
 
-Tidak ada keputusan yang menghalangi (D13). **Jangan ubah `composer.json`.**
-
-**Sebelum menulis kode, minta pemilik menjalankan `git status --short; ls app/Http/Controllers tests/Feature`, lalu menempel per kelompok:**
-- Kelompok 1: `routes/web.php`, `app/Policies/OrganizationPolicy.php`, `app/Models/Transaction.php`
-- Kelompok 2: `app/Http/Controllers/TransactionController.php`, `app/Http/Controllers/OrganizationDashboardController.php`
-- Kelompok 3 (bila perlu): `resources/views/organizations/dashboard.blade.php`, `app/Models/Organization.php`
-- Perintah: `for f in <file1> <file2>; do echo "=== $f ==="; cat "$f"; echo; done`
-
-**Yang dibangun:**
-- `ReportController` + rute di grup `org.member` (URI Indonesia, mis. `/laporan`, `/laporan/unduh`), gerbang `viewReports` (Admin + Editor); Anggota 403.
-- Filter **bulan** (`Y-m`) dan **minggu** (minggu dipotong di batas bulan).
-- **Saldo awal periode** = `opening_balance` + transaksi sebelum periode; ringkasan pemasukan, pengeluaran, saldo akhir; rincian per kategori; daftar transaksi periode itu (soft-deleted tidak ikut).
-- **Tunggakan** (tagihan `belum` dan `menunggu`), **hanya Admin** (`viewArrears`); Editor tidak melihatnya (bagian itu tidak dirender dan datanya tidak dikirim).
-- **Unduh CSV** (tanpa paket baru): kolom tanggal, jenis, kategori, keterangan, jumlah; aman untuk Excel (BOM UTF-8); nilai berawalan `= + - @` dinetralkan agar tidak jadi rumus; log `report.exported`.
-- Tautan "Laporan" di dashboard (hanya bila `@can('viewReports')`); mungkin tangani `tanggal` vs zona waktu (masalah di bagian 8) dengan catatan, bukan perubahan besar.
-- **Tes:** gerbang peran (Anggota 403, Editor tanpa tunggakan, Admin dengan tunggakan), saldo awal periode, pemotongan minggu di batas bulan, transaksi soft-deleted tidak dihitung, isi dan header CSV, netralisasi rumus CSV, organisasi lain 404, filter tidak valid ditolak.
-
-### Langkah F2 — Tutup buku
-`PeriodClosure`: Admin menutup bulan; bulan ditutup menolak tambah/ubah/hapus transaksi di bulan itu **dan** pelunasan/persetujuan/pembatalan iuran yang membuat atau menghapus transaksi di periode tertutup (menyentuh `TransactionController`, `InvoiceController`, `Invoice::settle()`). Perlu satu pertanyaan desain di awal: transaksi otomatis iuran memakai tanggal hari ini, jadi bagaimana bila bulan berjalan sudah ditutup? Default aman: tolak dengan pesan jelas. Bisa dibuka kembali oleh Admin dengan catatan log.
+**Sebelum menulis kode, minta pemilik menjalankan `git status --short; ls app/Models database/migrations tests/Feature`, lalu menempel:**
+- `app/Models/PeriodClosure.php`, migrasi `period_closures`, `app/Http/Controllers/InvoiceController.php`, `app/Http/Requests/TransactionRequest.php`, `routes/web.php`, `app/Policies/OrganizationPolicy.php`. (`TransactionController`, `Invoice`, `Organization`, dan `ReportController` sudah pernah dilihat; minta versi terbaru hanya bila diperlukan.)
 
 ### Langkah G — Panel Owner/Dev
 `/owner/*`: daftar organisasi (nama, tanggal dibuat, jumlah anggota, status), aktifkan/nonaktifkan; tes bahwa tidak menyentuh data keuangan.
