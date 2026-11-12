@@ -14,16 +14,40 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <a href="/">
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
-                </a>
+    <body class="bg-canvas font-sans text-sm text-ink antialiased">
+        <div class="min-h-screen lg:grid lg:grid-cols-[1.1fr_1fr]">
+            {{-- Kolom kiri: hanya di layar lebar --}}
+            <div class="hidden flex-col justify-between bg-deep p-14 text-white lg:flex">
+                <a href="/" class="text-2xl font-extrabold tracking-tight">Kas<b class="text-mint">Kita</b></a>
+
+                <div>
+                    <h1 class="max-w-sm text-4xl font-extrabold leading-tight tracking-tight">
+                        Kas organisasi, tercatat rapi dan terbuka.
+                    </h1>
+                    <p class="mt-4 max-w-sm text-[#a9d5d0]">
+                        Catat iuran, pengeluaran, dan lihat ke mana uang organisasi dipakai dalam satu tempat.
+                    </p>
+                </div>
+
+                @if (app()->environment('local'))
+                    <div class="w-72 rounded-2xl bg-white/10 px-5 py-4">
+                        <div class="text-xs text-[#a9d5d0]">Mode prototipe presentasi</div>
+                        <div class="mt-1 text-2xl font-extrabold">4 profil demo</div>
+                    </div>
+                @else
+                    <div></div>
+                @endif
             </div>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                {{ $slot }}
+            {{-- Kolom kanan: formulir --}}
+            <div class="flex min-h-screen items-center justify-center px-6 py-10 lg:min-h-0">
+                <div class="w-full max-w-sm">
+                    <a href="/" class="mb-8 block text-2xl font-extrabold tracking-tight text-deep lg:hidden">
+                        Kas<b class="text-brand">Kita</b>
+                    </a>
+
+                    {{ $slot }}
+                </div>
             </div>
         </div>
     </body>
