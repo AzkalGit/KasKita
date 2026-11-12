@@ -1,3 +1,7 @@
+@php
+    $org = request()->route('organization');
+    $org = $org instanceof \App\Models\Organization ? $org : null;
+@endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,9 +16,27 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+                    <x-nav-link :href="route('organizations.index')" :active="request()->routeIs('organizations.index')">
+                        Organisasi
                     </x-nav-link>
+                    @if ($org)
+                        <x-nav-link :href="route('organizations.dashboard', $org)" :active="request()->routeIs('organizations.dashboard')">Dashboard</x-nav-link>
+                        @can('viewTransactions', $org)
+                            <x-nav-link :href="route('transactions.index', $org)" :active="request()->routeIs('transactions.*')">Transaksi</x-nav-link>
+                        @endcan
+                        @can('viewInvoices', $org)
+                            <x-nav-link :href="route('invoices.index', $org)" :active="request()->routeIs('invoices.*')">Iuran</x-nav-link>
+                        @endcan
+                        @can('viewReports', $org)
+                            <x-nav-link :href="route('reports.index', $org)" :active="request()->routeIs('reports.*')">Laporan</x-nav-link>
+                        @endcan
+                        @can('manageMembers', $org)
+                            <x-nav-link :href="route('members.index', $org)" :active="request()->routeIs('members.*')">Anggota</x-nav-link>
+                        @endcan
+                        @can('manageInvitations', $org)
+                            <x-nav-link :href="route('invitations.index', $org)" :active="request()->routeIs('invitations.*')">Undangan</x-nav-link>
+                        @endcan
+                    @endif
                     @if (Auth::user()->isOwner())
                         <x-nav-link :href="route('owner.organizations.index')" :active="request()->routeIs('owner.*')">
                             Panel Owner
@@ -40,7 +62,7 @@
 
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            Profil
                         </x-dropdown-link>
 
                         <!-- Authentication -->
@@ -50,7 +72,7 @@
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
-                                {{ __('Log Out') }}
+                                Keluar
                             </x-dropdown-link>
                         </form>
                     </x-slot>
@@ -91,7 +113,7 @@
 
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+                    Profil
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
@@ -101,7 +123,7 @@
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">
-                        {{ __('Log Out') }}
+                        Keluar
                     </x-responsive-nav-link>
                 </form>
             </div>

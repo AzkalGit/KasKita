@@ -142,11 +142,13 @@
                                 <div class="mt-2 text-sm text-gray-500">
                                     @if ($inv->isPaid())
                                         Pelunasan tagihanmu sendiri hanya bisa dibatalkan oleh pengelola lain.
-                                    @elseif ($hasOtherManager)
-                                        Menunggu diverifikasi pengelola lain.
-                                    @else
+                                    @elseif (! $hasOtherManager)
                                         Belum ada pengelola lain (Admin atau Editor) yang bisa memverifikasi tagihan ini.
                                         Jadikan seorang anggota sebagai Editor di halaman Anggota.
+                                    @elseif ($inv->status === 'menunggu')
+                                        Menunggu diverifikasi pengelola lain.
+                                    @else
+                                        Pengelola lain bisa melunasi tagihan ini secara tunai.
                                     @endif
                                 </div>
                             @else

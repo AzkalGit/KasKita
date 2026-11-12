@@ -410,7 +410,7 @@ class InvoiceManagementTest extends TestCase
         [$editor] = $this->memberWithRole($org, 'editor');
         $mAdmin = $this->adminMember($org, $admin);
         $mAdmin->update(['is_billable' => true]);
-        $this->invoice($mAdmin);
+        $this->invoice($mAdmin, status: 'menunggu');
 
         // Admin melihat tagihannya sendiri: tanpa tombol, ada keterangan menunggu pengelola lain
         $this->actingAs($admin)->get(route('invoices.index', $org))
@@ -429,7 +429,7 @@ class InvoiceManagementTest extends TestCase
         [$org, $admin] = $this->makeOrg();
         $mAdmin = $this->adminMember($org, $admin);
         $mAdmin->update(['is_billable' => true]);
-        $this->invoice($mAdmin);
+        $this->invoice($mAdmin, status: 'menunggu');
 
         // Admin sendirian
         $this->actingAs($admin)->get(route('invoices.index', $org))
@@ -450,6 +450,21 @@ class InvoiceManagementTest extends TestCase
         $this->actingAs($admin)->get(route('invoices.index', $org))
             ->assertSee('Menunggu diverifikasi pengelola lain')
             ->assertDontSee('Belum ada pengelola lain');
+    }
+
+    public function test_tagihan_sendiri_belum_diajukan_tidak_menampilkan_pesan_menunggu(): void
+    {
+        [$org, $admin] = $this->makeOrg();
+        $this->memberWithRole($org, 'editor');
+        $mAdmin = $this->adminMember($org, $admin);
+        $mAdmin->update(['is_billable' => true]);
+        $this->invoice($mAdmin);
+
+        $this->actingAs($admin)->get(route('invoices.index', $org))
+            ->assertSee('(tagihanmu)')
+            ->assertDontSee('Menunggu diverifikasi pengelola lain')
+            ->assertDontSee('Belum ada pengelola lain')
+            ->assertSee('Pengelola lain bisa melunasi');
     }
 
     public function test_tagihan_organisasi_lain_menghasilkan_404(): void
