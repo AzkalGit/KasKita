@@ -2,7 +2,7 @@
 
 > Dokumen serah-terima antar sesi Claude, **versi ringkas**. Fokus: aturan kerja dan langkah berikutnya.
 > Detail langkah yang sudah selesai (aturan bisnis rinci, daftar tes, riwayat) ada di **`docs/RIWAYAT.md`**. Jangan ditempel utuh; minta bagian tertentu bila perlu.
-> Terakhir diperbarui: **12 Nov 2026** · Tes: **217 lulus, 1260 assertion** (dijalankan pemilik) · Laravel 13 + Breeze (Blade).
+> Terakhir diperbarui: **12 Nov 2026** · Tes: **220 lulus** (dijalankan pemilik) · Laravel 13 + Breeze (Blade).
 
 ## 0. Cara kerja dan aturan
 
@@ -12,8 +12,8 @@ Pemilik memakai **beberapa sesi Claude** karena batas pemakaian. Pemilik **bukan
 
 Aturan:
 
-1. **Mulai selalu dengan `git status --short` dan `ls`** untuk memastikan belum ada kode yang ditulis sesi lain (pernah terjadi di E3). Kode di repo lebih benar daripada berkas ini.
-2. **Jangan mengarang isi file yang belum dilihat.** Minta pemilik menempel dulu. Berkas bersama (`routes/web.php`, Policy, `OrganizationMember.php`, view dashboard) jangan ditimpa utuh sebelum dilihat versi terbarunya.
+1. **Mulai selalu dengan `git status --short` dan `ls`** untuk memastikan belum ada kode yang ditulis sesi lain (pernah terjadi di E3 dan di awal H). Kode di repo lebih benar daripada berkas ini.
+2. **Jangan mengarang isi file yang belum dilihat.** Minta pemilik menempel dulu. Berkas bersama (`routes/web.php`, Policy, `OrganizationMember.php`, view dashboard, layout) jangan ditimpa utuh sebelum dilihat versi terbarunya.
 3. **Hemat konteks:** satu langkah per percakapan. Untuk tes cukup baris `Tests: N passed (M assertions)` kecuali ada yang gagal. Untuk file panjang, pakai `grep -n "function"` dulu. **Perubahan kecil = "cari teks ini, ganti dengan ini"**, bukan file utuh; file utuh hanya untuk file baru atau perubahan besar.
 4. **Serahan memuat:** (a) file BARU/UBAH, (b) perintah untuk pemilik, (c) yang sudah diuji dan caranya, (d) yang belum bisa diuji. Pemilik tidak pernah menempel `.env`, `vendor/`, `node_modules/`, `*.sqlite`, `*.log`.
 5. **Jujur soal pengujian:** jangan klaim "sudah dicoba di browser" bila hanya tes otomatis. Angka tes dari pemilik.
@@ -23,7 +23,8 @@ Aturan:
 9. **Setelah satu langkah selesai**, Claude memberi: (i) tambahan untuk `docs/RIWAYAT.md` (entri riwayat + aturan bisnis baru), (ii) `CLAUDE.md` baru yang ringkas, keduanya **sebagai teks di chat**, plus perintah commit. `CLAUDE.md` harus tetap ringkas: langkah selesai dipindah ke arsip, bukan ditumpuk.
 10. **Kode yang belum ditinjau sesi lain** ditandai "belum ditinjau" di arsip.
 11. Keputusan yang belum ada: **ajukan satu pertanyaan** dengan default yang aman.
-12. **`RoutingTest` memindai teks `routes/web.php` tanpa memperhitungkan `prefix()`:** jangan menulis `Route::get('/')` di dalam grup berawalan (dianggap sama dengan `GET /` halaman welcome); beri path unik.
+12. **`RoutingTest` memindai teks `routes/web.php` tanpa memperhitungkan `prefix()`:** jangan menulis `Route::get('/')` di dalam grup berawalan; beri path unik.
+13. **Tampilan tampak tanpa gaya?** Hentikan `npm run dev`, `php artisan optimize:clear`, `npm run dev`, Ctrl+Shift+R. Hampir selalu itu penyebabnya (Vite belum menangkap kelas/konfigurasi Tailwind baru), bukan kurang file.
 
 **Prompt serah-terima** (tempel bersama berkas ini ke percakapan baru):
 
@@ -34,7 +35,7 @@ Aturan:
 - **Apa:** aplikasi kas organisasi (iuran, donasi, pengeluaran). Satu akun bisa ikut banyak organisasi; peran (Admin, Editor, Anggota) **per organisasi**; Owner/Dev = peran **platform** (`users.platform_role = 'owner'`), terpisah dari organisasi (D17).
 - **Stack:** Laravel 13.x, PHP ≥ 8.4.1, Breeze (Blade + Tailwind via Vite), `MAIL_MAILER=log`, `SESSION_DRIVER=database`. Tes pakai SQLite di memori.
 - **Lingkungan pemilik:** Linux Mint, PHP 8.4, MariaDB 10.11 (db `kaskita`, user `kaskita_user`), Node 22 (nvm). Dua terminal: `npm run dev` dan `php artisan serve` (`http://127.0.0.1:8000`). Periksa DB dengan `php artisan db:show`, `db:table <tabel>`, `tinker`.
-- **Repo:** `https://github.com/AzkalGit/KasKita`, folder `~/Documents/Kuliah/sem3/SI/KasKita` (Laravel di akar). Branch `main` = prototipe statis (GitHub Pages), **jangan disentuh**. Kerja di **`fitur/laravel-fondasi`**. Prototipe lama di `prototipe-statis/`. Sebelum `git add -A`, cek `git status` (jangan sampai `.env` ikut).
+- **Repo:** `https://github.com/AzkalGit/KasKita`, folder `~/Documents/Kuliah/sem3/SI/KasKita` (Laravel di akar). Branch `main` = prototipe statis (GitHub Pages), **jangan disentuh**. Kerja di **`fitur/laravel-fondasi`**. Prototipe lama di `prototipe-statis/` (berisi `dashboard.html`, `login.html`, `register.html`, `transaksi.html`, `iuran.html`, `anggota.html`, `laporan.html`, `pengaturan.html`, `organisasi.html`, `owner.html`, `index.html`, folder `css/` dan `js/`). Sebelum `git add -A`, cek `git status` (jangan sampai `.env` ikut).
 
 ```bash
 composer install
@@ -62,8 +63,9 @@ Perintah pemilik setelah menyalin serahan: salin file → `php artisan migrate:f
 - Validasi di FormRequest (di controller `index`/laporan boleh `$request->validate()` untuk filter GET), otorisasi di Policy. Jangan taruh rute aplikasi di `routes/auth.php`. Jalankan `pint` pada file yang diubah.
 - Jangan ubah migrasi lama tanpa memberi tahu pemilik; untuk skema baru pertimbangkan migrasi baru. **Jangan ubah `composer.json` (D13: tanpa paket PDF).**
 - **Lampiran** di disk privat (`Invoice::PROOF_DISK` = `local`), tidak pernah disk `public`; tipe dan ukuran divalidasi di server; unduh lewat rute yang dicek hak.
-- **CSV:** `fputcsv(..., ',', '"', '')` (parameter `$escape` eksplisit di PHP 8.4), BOM UTF-8, netralkan nilai berawalan `= + - @`.
+- **CSV:** `fputcsv(..., ',', '"', '')`, BOM UTF-8, netralkan nilai berawalan `= + - @`.
 - Jangan menyimpan rahasia di repo, seeder, atau percakapan. Jangan tampilkan data keuangan di panel Owner/Dev.
+- **Tampilan (D7 = Tailwind di Blade):** warna dan font prototipe ada di `tailwind.config.js` (`deep`, `brand`, `mint`, `soft`, `canvas`, `ink`, `mute`, `line`, `expense`, `income`; font Plus Jakarta Sans). Pakai token ini, bukan warna Breeze (indigo/gray). Tanpa paket JS/CSS baru; grafik dengan CSS murni. Kotak/kata sandi demo hanya bila `app()->environment('local')`.
 
 ## 3. Struktur (ringkas)
 
@@ -76,9 +78,9 @@ app/Exceptions/PeriodClosedException.php
 app/Listeners/LinkPendingMemberships.php ; app/Policies/OrganizationPolicy.php
 app/Models/             User, Organization, OrganizationMember, Category, Transaction, Invoice, Invitation, InvitationUse, ActivityLog, PeriodClosure
 database/seeders/       OwnerSeeder, DemoOrganizationSeeder
-resources/views/        organizations, invitations, members, categories, transactions, invoices, reports, owner/organizations
+resources/views/        organizations, invitations, members, categories, transactions, invoices, reports, owner/organizations, layouts (app, guest, sidebar, topbar, navigation), components (side-link, bawaan Breeze)
 routes/web.php          rute aplikasi
-tests/Feature/          satu berkas per modul (mis. ReportTest, OwnerPanelTest, OwnerSeparationTest)
+tests/Feature/         satu berkas per modul (mis. ReportTest, OwnerPanelTest, LoginPageTest)
 ```
 
 ## 4. Skema (ringkas)
@@ -109,7 +111,7 @@ tests/Feature/          satu berkas per modul (mis. ReportTest, OwnerPanelTest, 
 | `manageTransactions`, `manageInvoices` (Admin + Editor) | ya | ya | – |
 | `deleteTransactions`, `manageMembers`, `manageInvitations`, `manageSettings`, `closePeriods` | ya | – | – |
 
-**Aturan tagihan sendiri:** tak seorang pun melunasi, menyetujui/menolak, atau membatalkan pelunasan tagihannya sendiri (`InvoiceController::isOwn()`); pengelola lain yang memverifikasi. Pemilik tagihan boleh mengajukan dan mengurus bukti tagihannya sendiri.
+**Aturan tagihan sendiri:** tak seorang pun melunasi, menyetujui/menolak, atau membatalkan pelunasan tagihannya sendiri (`InvoiceController::isOwn()`); pengelola lain yang memverifikasi. Pemilik tagihan boleh mengajukan dan mengurus bukti tagihannya sendiri. Di view Iuran, pesan "Menunggu diverifikasi pengelola lain" hanya untuk status `menunggu`.
 
 **Owner platform (bukan peran organisasi):** hanya panel `/owner/organisasi/*` (middleware `owner`); tidak membuat/bergabung organisasi (D17).
 
@@ -120,9 +122,10 @@ tests/Feature/          satu berkas per modul (mis. ReportTest, OwnerPanelTest, 
 - **Anggota:** kelola peran Anggota↔Editor, nonaktifkan/aktifkan, `is_billable`, keluar.
 - **Kategori dan transaksi:** CRUD kategori (Admin); transaksi dicatat Admin/Editor, hapus (soft) Admin; transaksi otomatis iuran **terkunci**; filter `month`, `type`, `q`; saldo dashboard = `opening_balance` + masuk − keluar.
 - **Iuran (E1-E3):** buat tagihan bulanan, lunas tunai, batalkan pelunasan, ajukan pembayaran + bukti (privat), tarik, setujui/tolak. `Invoice::settle()` membuat transaksi pemasukan otomatis kategori Iuran, keterangan "Iuran {Bulan} {Tahun}" **tanpa nama anggota**.
-- **Laporan (F1, `/laporan`):** filter bulan dan minggu (Senin-Minggu, dipotong di batas bulan); saldo awal/akhir, rincian per kategori, daftar transaksi; tunggakan hanya Admin; unduh CSV (`/laporan/unduh`) dengan log `report.exported`.
-- **Tutup buku (F2):** Admin menutup bulan lampau dari halaman Laporan (`periods.close`) dan membuka kembali (`periods.reopen`), keduanya dilog. Bulan tertutup menolak tambah/ubah/pindah/hapus transaksi serta lunas tunai, setujui (bila bulan hari ini tertutup) dan batal lunas (bila transaksi pembayaran di bulan tertutup); Anggota tetap boleh mengajukan pembayaran (`PeriodClosedException`).
-- **Panel Owner (G, `/owner/organisasi/daftar`):** hanya metadata organisasi (nama, dibuat, anggota aktif bersakun, status, penanda "Tanpa Admin", ringkasan jumlah organisasi/akun); nonaktifkan/aktifkan dengan log; organisasi nonaktif = 403 bagi anggotanya. Owner yang membuka `/organisasi` dialihkan ke panel.
+- **Laporan (F1, `/laporan`):** filter bulan dan minggu; saldo awal/akhir, rincian per kategori, daftar transaksi; tunggakan hanya Admin; unduh CSV dengan log `report.exported`.
+- **Tutup buku (F2):** Admin menutup/membuka bulan lampau dari halaman Laporan, dilog. Bulan tertutup menolak tambah/ubah/pindah/hapus transaksi dan beberapa aksi iuran (`PeriodClosedException`); Anggota tetap boleh mengajukan pembayaran.
+- **Panel Owner (G, `/owner/organisasi/daftar`):** hanya metadata organisasi; nonaktifkan/aktifkan dengan log; organisasi nonaktif = 403 bagi anggotanya.
+- **Tampilan (H, sebagian):** layout sidebar hijau tua untuk halaman organisasi (`layouts/sidebar`, responsif) dan topbar untuk halaman lain; login dua kolom (`layouts/guest` + `auth/login`, kotak demo hanya di `local`).
 
 ## 7. Data demo dan pengujian
 
@@ -136,44 +139,45 @@ Seeder (`migrate:fresh --seed`), kata sandi semua akun `KitaDemo2026!`:
 | Anggota (Dimas) | `anggota@kaskita.demo` | ya |
 | Kontak tanpa akun | `sinta@`, `budi@`, `citra@` `kaskita.demo` | ya |
 
-Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `BEM26KAS`, 6 transaksi (2 otomatis dari iuran), 4 tagihan 2026-10 (Sinta lunas, Dimas belum, Budi menunggu dengan bukti fiktif, Citra lunas). Saldo dashboard Rp 455.000. Seeder tidak idempotent.
+Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `BEM26KAS`, 6 transaksi (2 otomatis dari iuran), 4 tagihan 2026-10 (Sinta lunas, Dimas belum, Budi menunggu dengan bukti fiktif, Citra lunas). Saldo dashboard Rp 455.000 pada data seeder murni (DB lokal pemilik sudah berisi data tambahan). Seeder tidak idempotent.
 
-**Pengujian:** 217 tes lulus (SQLite di memori; MariaDB dan disk file sungguhan belum teruji). **Browser:** pemilik sudah mencoba login, daftar, dashboard, halaman Transaksi, sebagian E2, dan tampilan daftar Panel Owner. **Belum dicoba di browser:** alur E3, Laporan dan CSV (F1), Tutup buku (F2), Undangan, Anggota, Kategori, alur Transaksi lengkap, pengalihan Owner dari `/organisasi`, tombol nonaktifkan/aktifkan di Panel Owner. CSV belum dibuka di Excel/LibreOffice. **Uji mutasi:** hanya E1 satu kali; D, E2, E3, F1, F2, G belum (opsional; paling berguna: otorisasi F2 dan `EnsureOwner`).
+**Pengujian:** 220 tes lulus (SQLite di memori; MariaDB dan disk file sungguhan belum teruji). **Browser:** pemilik sudah mencoba login, daftar, dashboard (tampil dengan sidebar baru), halaman Transaksi, sebagian E2, daftar Panel Owner, halaman login baru. **Belum dicoba di browser:** alur E3, Laporan dan CSV, Tutup buku, Undangan, Anggota, Kategori, alur Transaksi lengkap, pengalihan Owner dari `/organisasi`, tombol Panel Owner, tampilan `/register` dan `/forgot-password` setelah layout dua kolom. CSV belum dibuka di Excel/LibreOffice. **Uji mutasi:** hanya E1 satu kali (opsional; paling berguna: otorisasi F2 dan `EnsureOwner`).
 
 ## 8. Keputusan aktif dan masalah terbuka
 
 **Keputusan (lengkap di arsip):**
 - **D1** Editor: transaksi, laporan tanpa tunggakan, Iuran (kecuali tagihan sendiri).
-- **D2** Anggota boleh melihat dashboard dan transaksi; keterangan transaksi iuran tanpa nama; tunggakan hanya Admin.
-- **D3/D12** Admin/Editor yang ingin membayar diberi `is_billable=true`; seeder Nadia/Rafi dibiarkan tidak ditagih.
-- **D5** serah-terima Admin, promosi Admin, hapus organisasi: belum ada; "minimal satu Admin" harus dirancang ulang bila dibuat. Panel Owner menandai organisasi "Tanpa Admin".
-- **D7** CSS prototipe vs Tailwind: belum diputuskan; tampilan mengikuti halaman asli KasKita. **D8** locale `id`/timezone `Asia/Jakarta`: belum diubah.
-- **D10/D11** bukti bayar iuran: selesai (E3); nota transaksi manual menyusul (Langkah H).
-- **D13** Laporan **CSV saja**; PDF ditunda (butuh `dompdf` dan ubah `composer.json`).
-- **D14 (F1)** Tunggakan = semua tagihan `belum`+`menunggu` per hari ini, tidak ikut filter periode; minggu = Senin-Minggu dipotong batas bulan; CSV berpemisah koma.
-- **D15 (F2)** Tutup buku: hanya bulan lampau, hanya Admin, bisa dibuka kembali (dilog). Bila bulan hari ini tertutup, lunas tunai/setujui ditolak dengan pesan jelas. Anggota tetap boleh mengajukan pembayaran.
-- **D16 (G)** Tanpa enkripsi end-to-end: server harus membaca data untuk saldo, filter, pencarian, dan CSV. Perlindungan: kata sandi di-hash, lampiran privat, panel Owner tanpa data keuangan. Opsional bila dipakai publik: cast `encrypted` untuk `payment_info`, HTTPS, enkripsi disk/backup.
-- **D17 (G)** Owner platform terpisah dari peran organisasi: dialihkan dari `/organisasi`, tidak bisa membuat organisasi atau bergabung (403). Untuk mencoba peran Admin, pakai akun demo.
+- **D2** Anggota boleh melihat dashboard dan transaksi; keterangan transaksi iuran tanpa nama; tunggakan hanya Admin. (Prototipe menulis "Iuran Oktober — Alya Nurdin": **jangan disalin**.)
+- **D3/D12** Admin/Editor yang ingin membayar diberi `is_billable=true`.
+- **D5** serah-terima Admin, promosi Admin, hapus organisasi: belum ada.
+- **D7 (diputuskan)** Tailwind di Blade dengan token warna prototipe. **D8** locale `id`/timezone `Asia/Jakarta`: belum diubah.
+- **D10/D11** bukti bayar iuran selesai (E3); nota transaksi manual menyusul.
+- **D13** Laporan CSV saja. **D14** Tunggakan = semua tagihan `belum`+`menunggu` per hari ini. **D15** Tutup buku hanya bulan lampau, hanya Admin, bisa dibuka lagi.
+- **D16** Tanpa enkripsi end-to-end; perlindungan: hash, lampiran privat, panel Owner tanpa data keuangan.
+- **D17** Owner platform terpisah dari peran organisasi.
 
 **Masalah terbuka yang relevan:**
+- Isi halaman organisasi (Dashboard, Transaksi, Iuran, Anggota, Laporan, Kategori, Undangan, Organisasi, Profil, Panel Owner) masih gaya Breeze lama (link indigo, kartu putih); belum seragam dengan prototipe.
+- Halaman Daftar, Lupa/Reset kata sandi: layout sudah dua kolom tetapi isi masih Inggris/Breeze.
+- Sidebar belum punya ikon dan badge angka merah di menu Iuran (jumlah tagihan `menunggu`); menu Anggota hanya Admin.
 - Pencarian transaksi `q`: `%` dan `_` jadi wildcard (perbaikan: `addcslashes($q, '%_\\')`).
-- **Zona waktu (D8):** pelunasan/persetujuan mengisi `tanggal` transaksi dengan hari ini (UTC), bisa bergeser dekat tengah malam WIB; bulan bawaan laporan dan "bulan hari ini" untuk F2 memakai jam server.
-- View Iuran: tagihan sendiri milik pengelola berstatus `belum` menampilkan "Menunggu diverifikasi pengelola lain" padahal belum diajukan (perbaikan kecil: tampilkan hanya bila `status === 'menunggu'`).
+- **Zona waktu (D8):** `tanggal` pelunasan memakai hari ini (UTC); bulan bawaan laporan dan F2 memakai jam server.
 - "Lunas tunai" pada tagihan `menunggu` mengubah `method` jadi tunai dan bukti tetap tersimpan.
-- Laporan: daftar transaksi periode tidak dipaginasi; CSV berkoma bisa terbuka dalam satu kolom di Excel berlokal Indonesia (bila terjadi, ganti ke titik koma di `ReportController::download`).
+- Laporan: daftar transaksi tidak dipaginasi; CSV berkoma bisa terbuka dalam satu kolom di Excel berlokal Indonesia.
 - Non-anggota mendapat 403 untuk organisasi yang ada dan 404 untuk yang tidak ada (usul: 404 keduanya).
-- Bila Admin menambahkan email Owner sebagai kontak, akun Owner bisa tertaut ke organisasi saat verifikasi (celah kecil, dibiarkan).
-- Tabel Panel Owner sempat tampak tanpa gaya di tangkapan layar (kemungkinan Tailwind belum memuat kelas view baru; restart `npm run dev` lalu Ctrl+Shift+R); belum dikonfirmasi.
+- Bila Admin menambahkan email Owner sebagai kontak, akun Owner bisa tertaut saat verifikasi (celah kecil, dibiarkan).
 - `OwnerSeeder` memakai kata sandi tetap: jangan `db:seed` di server sungguhan.
-- Konfigurasi bawaan masih Inggris/UTC; `README.md` basi; `welcome.blade.php` bawaan.
-- `.env` pernah tertempel di percakapan: disarankan `php artisan key:generate` dan ganti kata sandi DB.
-- Daftar lengkap masalah ada di arsip bagian 9.
+- `README.md` basi; `welcome.blade.php` bawaan; `.env` pernah tertempel di percakapan (saran: `php artisan key:generate`, ganti kata sandi DB).
 
 ## 9. Langkah berikutnya (satu langkah per percakapan)
 
-**Selesai:** A-E3, F1, F2, G (rincian di `docs/RIWAYAT.md`).
+**Selesai:** A-G, dan bagian awal H (layout sidebar/topbar, login, perbaikan pesan tagihan).
 
-**Opsional sebelum H (bisa dilakukan pemilik sendiri):** coba di browser: login Owner → `/organisasi` dialihkan ke panel → nonaktifkan BEM → login Nadia (harus 403) → aktifkan kembali. Lalu Nadia → Laporan → tutup bulan lampau → coba catat transaksi di bulan itu (ditolak) → buka kembali. Coba juga alur E3 (Dimas mengajukan dengan bukti → Rafi menyetujui/menolak) dan unduh CSV lalu buka di Excel/LibreOffice. Perbaikan kecil view Iuran bisa jadi "langkah 0" di awal H.
+### Langkah H — Tampilan dan penyempurnaan (dikerjakan halaman demi halaman)
 
-### Langkah H — Tampilan dan penyempurnaan ← *berikutnya*
-View prototipe halaman demi halaman (putuskan D7), navigasi/sidebar, terjemahkan teks Breeze, atur D8, perbarui `README.md`, hapus `welcome.blade.php`, syarat lingkungan `OwnerSeeder`, uji di MariaDB, nota transaksi (D10), Pull Request ke `main` (perhatikan GitHub Pages), tinjau masalah terbuka. **Langkah ini besar: pecah per halaman (satu halaman per percakapan).** Sebelum menulis kode, minta pemilik menempel view yang akan dirapikan dan `resources/views/layouts/app.blade.php`.
+**Berikutnya: Dashboard** (`resources/views/organizations/dashboard.blade.php`, `OrganizationDashboardController`). Selisih dengan prototipe: judul "Dashboard" + subjudul; tombol "+ Catat transaksi" (bila `manageTransactions`); banner kuning "N bukti pembayaran iuran menunggu verifikasi →" (hanya pengelola, tautan ke Iuran); 4 kartu (saldo hijau tua dengan "termasuk saldo awal Rp ...", pemasukan, pengeluaran, jumlah transaksi); grafik batang pemasukan vs pengeluaran per bulan (CSS murni, tanpa paket baru) di kartu kiri; "Transaksi terakhir" di kartu kanan, nominal tebal berwarna (`text-income`/`text-expense`), **tanpa nama anggota (D2)**; hapus link "← Kembali ke daftar organisasi" (sudah di sidebar). **Filter periode ditunda.** Badge angka merah menu Iuran di sidebar ikut dikerjakan (data sama dengan banner; hitung hanya untuk pengelola). Semua butuh tambahan di controller + tes.
+Tempel sebelum menulis kode: `cat prototipe-statis/dashboard.html`, `ls -la prototipe-statis/css prototipe-statis/js`, `cat app/Http/Controllers/OrganizationDashboardController.php`, `cat resources/views/organizations/dashboard.blade.php`; bagian CSS prototipe diminta lewat `grep -n` pada `prototipe-statis/css/*.css`.
+
+**Urutan halaman sesudahnya** (satu per percakapan): Daftar + Lupa/Reset kata sandi (terjemahkan teks Breeze) → Transaksi → Iuran (+ perbaiki sisa gaya) → Anggota → Laporan (+ Tutup buku) → Pengaturan (Kategori/Undangan) → Organisasi (daftar/buat/gabung) → Profil → Panel Owner (periksa tampilan tanpa gaya) → ikon sidebar.
+**Terakhir:** atur D8 (locale/timezone), perbarui `README.md`, hapus `welcome.blade.php`, syarat lingkungan `OwnerSeeder`, uji di MariaDB, nota transaksi (D10), Pull Request ke `main` (perhatikan GitHub Pages), tinjau masalah terbuka.
+EOF

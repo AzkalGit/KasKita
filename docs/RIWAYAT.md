@@ -384,3 +384,18 @@ View prototipe halaman demi halaman (putuskan D7), navigasi/sidebar organisasi, 
 
 **Peta halaman prototipe → Laravel:** `organisasi.html`→`organizations.index` (ada) · `dashboard.html`→`organizations.dashboard` (dasar) · `transaksi.html`→`TransactionController` (ada) · `iuran.html`→`InvoiceController` (E1–E3 ada) · `anggota.html`→`MemberController` + `InvitationController` (ada) · `laporan.html`→`ReportController` · `pengaturan.html`→pengaturan organisasi + `CategoryController` (kategori ada) · `owner.html`→`Owner\OrganizationController`.
 
+
+## Langkah H (sebagian) — layout, login, perbaikan pesan tagihan (12 Nov 2026)
+
+**Selesai:**
+- **Langkah 0:** pesan tagihan sendiri di `invoices/index.blade.php`. "Menunggu diverifikasi pengelola lain" kini hanya muncul bila `status === 'menunggu'`. Tagihan `belum` yang punya pengelola lain menampilkan "Pengelola lain bisa melunasi tagihan ini secara tunai." Dua tes lama diubah agar membuat tagihan `menunggu`, ditambah satu tes baru (`test_tagihan_sendiri_belum_diajukan_tidak_menampilkan_pesan_menunggu`). Tes: 218.
+- **Layout organisasi (D7 diputuskan: Tailwind di Blade):** `layouts/app.blade.php` memakai sidebar bila ada `{organization}` di rute, dan `layouts/topbar.blade.php` bila tidak. Berkas baru: `layouts/sidebar.blade.php`, `layouts/topbar.blade.php`, `components/side-link.blade.php`. Warna dan font prototipe ada di `tailwind.config.js` (deep, brand, mint, soft, canvas, ink, mute, line, expense, income; font Plus Jakarta Sans). Sidebar menyembunyikan menu sesuai hak (`@can`), responsif (menu geser di layar kecil). Belum ada ikon dan badge.
+- **Login (dua kolom):** `layouts/guest.blade.php` dua kolom (kolom kiri hanya di layar lebar), `auth/login.blade.php` berbahasa Indonesia. Kotak "Akun demo presentasi" (kata sandi demo) dan kartu "4 profil demo" **hanya tampil bila `APP_ENV=local`**. Tes baru: `LoginPageTest` (2 tes). Tes: 220.
+
+**Aturan:** kata sandi demo tidak boleh tampil di luar `local`.
+
+**Catatan:**
+- `guest.blade.php` dipakai juga oleh Daftar, Lupa Kata Sandi, dan Reset, jadi ketiganya sudah berlayout dua kolom, tetapi isinya masih bahasa Inggris dan bergaya Breeze.
+- Bila tampilan tampak tanpa gaya (sidebar jadi teks polos): hentikan `npm run dev`, jalankan `php artisan optimize:clear`, `npm run dev` lagi, lalu Ctrl+Shift+R. Penyebabnya server Vite belum menangkap `tailwind.config.js` baru.
+- Dicoba di browser oleh pemilik: sidebar dan dashboard (isi masih gaya lama), login.
+- **Belum ditinjau:** tampilan `/register`, `/forgot-password`, `/reset-password`.
