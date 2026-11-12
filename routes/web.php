@@ -6,6 +6,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationDashboardController;
+use App\Http\Controllers\OwnerOrganizationController;
 use App\Http\Controllers\PeriodClosureController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -95,5 +96,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->where('period', '20\d{2}-(0[1-9]|1[0-2])')->name('periods.reopen');
         });
 });
+
+// Panel Owner/Dev (users.platform_role = 'owner'): hanya metadata organisasi, tanpa data keuangan.
+// Dijaga middleware 'owner'; bukan anggota organisasi mana pun, jadi tidak lewat 'org.member'.
+Route::middleware(['auth', 'verified', 'owner'])
+    ->prefix('owner/organisasi')
+    ->name('owner.organizations.')
+    ->group(function () {
+        Route::get('/daftar', [OwnerOrganizationController::class, 'index'])->name('index');
+        Route::patch('/{organization}/nonaktifkan', [OwnerOrganizationController::class, 'deactivate'])
+            ->whereNumber('organization')->name('deactivate');
+        Route::patch('/{organization}/aktifkan', [OwnerOrganizationController::class, 'activate'])
+            ->whereNumber('organization')->name('activate');
+    });
 
 require __DIR__.'/auth.php';

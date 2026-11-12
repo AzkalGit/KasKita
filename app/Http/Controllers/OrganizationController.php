@@ -16,6 +16,11 @@ class OrganizationController extends Controller
     // Daftar organisasi milik pengguna yang sedang login
     public function index(Request $request)
     {
+        // Owner platform bukan anggota organisasi mana pun: arahkan ke panelnya
+        if ($request->user()->isOwner()) {
+            return redirect()->route('owner.organizations.index');
+        }
+
         $memberships = $request->user()->memberships()
             ->where('is_active', true)
             ->with('organization')
@@ -27,6 +32,8 @@ class OrganizationController extends Controller
     // Buat organisasi baru: pembuat otomatis menjadi Admin
     public function store(Request $request)
     {
+        abort_if($request->user()->isOwner(), 403, 'Akun Owner platform tidak membuat organisasi.');
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
         ]);
@@ -62,6 +69,8 @@ class OrganizationController extends Controller
     // Gabung lewat kode undangan: peran selalu Anggota
     public function join(Request $request)
     {
+        abort_if($request->user()->isOwner(), 403, 'Akun Owner platform tidak bergabung ke organisasi.');
+
         $request->validate([
             'code' => ['required', 'string', 'max:20'],
         ]);

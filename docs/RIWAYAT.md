@@ -351,7 +351,33 @@ Perintah pemilik setelah menyalin serahan: salin file → `composer update --loc
 - Tes: gerbang peran (Anggota 403, Editor tanpa tunggakan), saldo awal periode, pemotongan minggu di batas bulan, isi CSV, isolasi organisasi lain (404), dan bahwa bulan ditutup menolak ubah/hapus transaksi.
 
 **Langkah G — Panel Owner/Dev**
-`/owner/*`: daftar organisasi (nama, tanggal dibuat, jumlah anggota, status), aktif/nonaktif; tes bahwa tidak menyentuh data keuangan.
+## Langkah G: Panel Owner/Dev (12 Nov 2026) · belum ditinjau sesi lain
+
+**Hasil:** tes 203 → 217 lulus (1260 assertion, dijalankan pemilik). Tanpa migrasi, tanpa perubahan Policy, tanpa perubahan `composer.json`.
+
+**File baru:**
+- `app/Http/Middleware/EnsureOwner.php` (alias `owner`): 403 bila bukan `isOwner()`.
+- `app/Http/Controllers/OwnerOrganizationController.php`: `index`, `deactivate`, `activate`.
+- `resources/views/owner/organizations/index.blade.php`
+- `tests/Feature/OwnerPanelTest.php` (10 tes), `tests/Feature/OwnerSeparationTest.php` (4 tes).
+
+**File diubah:** `bootstrap/app.php` (alias `owner`), `routes/web.php` (grup `owner/organisasi`), `layouts/navigation.blade.php` (tautan "Panel Owner" hanya untuk Owner, desktop dan ponsel), `OrganizationController` (Owner dialihkan/ditolak, lihat D17).
+
+**Aturan bisnis baru:**
+- Rute: `GET /owner/organisasi/daftar`, `PATCH /owner/organisasi/{organization}/nonaktifkan|aktifkan`. Middleware `auth`, `verified`, `owner`. Bukan anggota organisasi mana pun, jadi tidak lewat `org.member`.
+- Panel hanya menampilkan metadata: nama, tanggal dibuat, jumlah anggota aktif **bersakun** (kontak tanpa akun tidak dihitung), status, penanda "Tanpa Admin" (tidak ada Admin aktif), ringkasan jumlah organisasi (aktif/nonaktif) dan akun terdaftar (tanpa akun Owner). Query hanya memilih `id, name, status, created_at`; saldo, transaksi, tagihan, `payment_info`, nama dan email anggota tidak dibaca. Ada tes yang memastikan itu.
+- Nonaktifkan/aktifkan dilog lewat `ActivityLogger::record()` (`organization.deactivated` / `organization.activated`, metadata from/to). Status yang sama ditolak tanpa log.
+- Efek nonaktif memakai perilaku lama `EnsureOrganizationMember`: anggota mendapat 403 "Organisasi ini sedang dinonaktifkan." Data tidak dihapus. Kode undangan organisasi nonaktif juga ditolak (sudah ada sebelumnya).
+
+**Keputusan:**
+- **D16:** tanpa enkripsi end-to-end. Alasan: server harus membaca data untuk saldo, filter, pencarian, tunggakan, dan CSV; E2EE merusak semua itu dan menambah masalah kunci. Perlindungan yang dipakai: kata sandi di-hash, lampiran di disk privat, panel Owner tanpa data keuangan. Pengelola server yang memegang akses database secara teknis tetap bisa membaca data (bergantung pada kebijakan, bukan kriptografi). Opsional bila dipakai publik: cast `encrypted` untuk `payment_info`, HTTPS, enkripsi disk/backup.
+- **D17:** Owner platform terpisah dari peran organisasi. Owner yang membuka `/organisasi` dialihkan ke panel; membuat organisasi dan bergabung dengan kode ditolak 403. Alasan: pembuat organisasi otomatis Admin yang bisa melihat data keuangan, bertentangan dengan panel Owner tanpa data keuangan. Untuk mencoba peran Admin, pakai akun demo biasa.
+
+**Kejadian:** `RoutingTest` sempat gagal karena rute indeks Owner ditulis `Route::get('/')` di dalam grup berawalan; tes itu memindai teks `routes/web.php` tanpa memperhitungkan `prefix()` dan menganggapnya sama dengan `GET /`. Diperbaiki dengan path unik `/daftar`. **Pelajaran:** jangan menulis `Route::get('/')` di grup berawalan.
+
+**Pengujian:** panel dilihat di browser oleh pemilik (daftar, ringkasan, dan penanda tampil benar). **Belum dicoba di browser:** pengalihan Owner dari `/organisasi`, tombol nonaktifkan/aktifkan, 403 untuk anggota organisasi nonaktif. Tabel di panel sempat tampak tanpa gaya di tangkapan layar; belum dikonfirmasi apakah normal setelah `npm run dev` dijalankan ulang. **Uji mutasi:** belum dilakukan (kandidat: `abort_unless` di `EnsureOwner`, dan `abort_if` di `OrganizationController::join`).
+
+**Masalah terbuka baru:** bila Admin menambahkan email Owner sebagai kontak, akun Owner bisa tertaut ke organisasi saat verifikasi (celah kecil, dibiarkan untuk skala tugas kuliah).
 
 **Langkah H — Tampilan (Tahap 5) dan penyempurnaan**
 View prototipe halaman demi halaman (putuskan D7), navigasi/sidebar organisasi, terjemahkan teks Breeze, atur D8, perbarui `README.md`, hapus `welcome.blade.php`, syarat lingkungan untuk `OwnerSeeder`, uji di MariaDB, lampiran nota transaksi (D10), pertimbangkan Pull Request ke `main` (perhatikan GitHub Pages), tinjau masalah 28–31.
