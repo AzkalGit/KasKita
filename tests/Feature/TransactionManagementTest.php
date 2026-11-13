@@ -289,6 +289,23 @@ class TransactionManagementTest extends TestCase
             ->assertSee('Sewa aula')->assertDontSee('Awal Oktober');
     }
 
+    public function test_kartu_filter_berjudul_dan_judul_daftar_menyebut_bulan(): void
+    {
+        [$org, $admin] = $this->makeOrg();
+        $cat = $this->category($org);
+        $this->tx($org, $admin, $cat, ['tanggal' => '2026-10-10', 'description' => 'Rapat Oktober']);
+
+        $this->actingAs($admin)->get(route('transactions.index', [$org, 'month' => '2026-10']))
+            ->assertOk()
+            ->assertSee('Filter')
+            ->assertSee('Ketik sebagian keterangan')
+            ->assertSee('Daftar transaksi · Oktober 2026 (1)', false);
+
+        $this->actingAs($admin)->get(route('transactions.index', $org))
+            ->assertOk()
+            ->assertSee('Daftar transaksi · Semua bulan (1)', false);
+    }
+
     public function test_daftar_dibagi_per_halaman(): void
     {
         [$org, $admin] = $this->makeOrg();

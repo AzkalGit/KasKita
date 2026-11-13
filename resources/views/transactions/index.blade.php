@@ -28,35 +28,41 @@
 
         {{-- Filter --}}
         <form method="GET" action="{{ route('transactions.index', $organization) }}"
-              class="grid items-end gap-4 rounded-2xl border border-line bg-white p-5 md:grid-cols-4">
-            <div>
-                <x-input-label for="f_month" value="Bulan" />
-                <x-text-input id="f_month" name="month" type="month" class="mt-1 block w-full"
-                              :value="$filters['month'] ?? ''" />
+              class="rounded-2xl border border-line bg-white p-5">
+            <h2 class="mb-4 text-base font-bold">Filter</h2>
+            <div class="grid items-end gap-4 md:grid-cols-4">
+                <div>
+                    <x-input-label for="f_month" value="Bulan" />
+                    <x-text-input id="f_month" name="month" type="month" class="mt-1 block w-full"
+                                  :value="$filters['month'] ?? ''" />
+                </div>
+                <div>
+                    <x-input-label for="f_type" value="Jenis" />
+                    <x-select-input id="f_type" name="type" class="mt-1 block w-full">
+                        <option value="">Semua</option>
+                        <option value="masuk" @selected(($filters['type'] ?? '') === 'masuk')>Pemasukan</option>
+                        <option value="keluar" @selected(($filters['type'] ?? '') === 'keluar')>Pengeluaran</option>
+                    </x-select-input>
+                </div>
+                <div>
+                    <x-input-label for="f_q" value="Cari keterangan" />
+                    <x-text-input id="f_q" name="q" class="mt-1 block w-full"
+                                  placeholder="Ketik sebagian keterangan"
+                                  :value="$filters['q'] ?? ''" />
+                </div>
+                <div class="flex items-center gap-3">
+                    <x-primary-button>Terapkan</x-primary-button>
+                    <a href="{{ route('transactions.index', $organization) }}"
+                       class="inline-flex items-center rounded-xl border border-line bg-white px-4 py-2 text-sm font-semibold text-ink hover:bg-canvas">Reset</a>
+                </div>
             </div>
-            <div>
-                <x-input-label for="f_type" value="Jenis" />
-                <select id="f_type" name="type" class="mt-1 block w-full rounded-xl border-line bg-white text-ink shadow-sm focus:border-brand focus:ring-brand">
-                    <option value="">Semua</option>
-                    <option value="masuk" @selected(($filters['type'] ?? '') === 'masuk')>Pemasukan</option>
-                    <option value="keluar" @selected(($filters['type'] ?? '') === 'keluar')>Pengeluaran</option>
-                </select>
-            </div>
-            <div>
-                <x-input-label for="f_q" value="Cari keterangan" />
-                <x-text-input id="f_q" name="q" class="mt-1 block w-full" :value="$filters['q'] ?? ''" />
-            </div>
-            <div class="flex items-center gap-3">
-                <x-primary-button>Terapkan</x-primary-button>
-                <a href="{{ route('transactions.index', $organization) }}" class="text-sm font-semibold text-mute hover:text-ink">Reset</a>
-            </div>
-            <x-input-error :messages="$errors->get('month')" class="md:col-span-4" />
+            <x-input-error :messages="$errors->get('month')" class="mt-2" />
         </form>
 
         {{-- Daftar --}}
         <div class="rounded-2xl border border-line bg-white p-5">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h3 class="text-base font-bold">Daftar transaksi ({{ $transactions->total() }})</h3>
+                <h3 class="text-base font-bold">Daftar transaksi · {{ ! empty($filters['month']) ? \Illuminate\Support\Carbon::parse($filters['month'].'-01')->locale('id')->translatedFormat('F Y') : 'Semua bulan' }} ({{ $transactions->total() }})</h3>
                 <div class="text-sm text-mute">
                     Pemasukan <strong class="text-income">Rp {{ number_format($masuk, 0, ',', '.') }}</strong>
                     · Pengeluaran <strong class="text-expense">Rp {{ number_format($keluar, 0, ',', '.') }}</strong>
