@@ -6,7 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Invitation;
 use App\Models\Organization;
 use App\Models\User;
-use Database\Seeders\DemoOrganizationSeeder;
+use Database\Seeders\TestOrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,7 +19,7 @@ class InvitationManagementTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $this->org = Organization::firstOrFail();
     }
 

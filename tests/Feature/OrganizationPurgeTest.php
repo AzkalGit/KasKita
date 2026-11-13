@@ -7,7 +7,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Transaction;
 use App\Models\User;
-use Database\Seeders\DemoOrganizationSeeder;
+use Database\Seeders\TestOrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,7 +17,7 @@ class OrganizationPurgeTest extends TestCase
 
     public function test_purge_menghapus_organisasi_beserta_tagihan_transaksi_dan_anggota(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $demo = Organization::firstOrFail();
 
         // organisasi lain yang harus tidak tersentuh

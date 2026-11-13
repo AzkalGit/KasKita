@@ -11,93 +11,145 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Data demo presentasi: 3 akun utama (Furqan, Fandi, Fadel) dan 4 organisasi.
+ * Akun Owner dibuat di OwnerSeeder. Akun tambahan: php artisan kaskita:isi-demo.
+ * PERINGATAN: kata sandi lemah, HANYA untuk demo lokal.
+ */
 class DemoOrganizationSeeder extends Seeder
 {
-    private const PASSWORD = 'KitaDemo2026!';
-
     public function run(): void
     {
         DB::transaction(function () {
-            // --- Akun demo ---
-            $nadia = User::forceCreate(['name' => 'Nadia Putri', 'email' => 'admin@kaskita.demo', 'password' => self::PASSWORD, 'email_verified_at' => now()]);
-            $rafi = User::forceCreate(['name' => 'Rafi Pratama', 'email' => 'editor@kaskita.demo', 'password' => self::PASSWORD, 'email_verified_at' => now()]);
-            $dimas = User::forceCreate(['name' => 'Dimas Saputra', 'email' => 'anggota@kaskita.demo', 'password' => self::PASSWORD, 'email_verified_at' => now()]);
+            $akun = [
+                'furqan' => User::forceCreate(['name' => 'M. Dwi Furqan', 'email' => 'furqan@gmail.com', 'password' => 'furqan123', 'email_verified_at' => now()]),
+                'fandi' => User::forceCreate(['name' => 'Raifandi Afriza', 'email' => 'fandi@gmail.com', 'password' => 'fandi123', 'email_verified_at' => now()]),
+                'fadel' => User::forceCreate(['name' => 'M. Fadel Fadlurrahman Syabri', 'email' => 'fadel@gmail.com', 'password' => 'fadel123', 'email_verified_at' => now()]),
+            ];
 
-            // --- Organisasi ---
-            $org = Organization::create([
-                'name' => 'BEM Fakultas Teknologi',
-                'status' => 'aktif',
-                'opening_balance' => 500000,
-                'default_dues' => 25000,
-                'payment_info' => 'Transfer ke rekening fiktif 1234567890 a.n. BEM Fakultas Teknologi',
-                'created_by' => $nadia->id,
-            ]);
+            $grup = [
+                [
+                    'name' => 'HMMI',
+                    'opening' => 1000000, 'dues' => 20000, 'code' => 'HMMI2026',
+                    'info' => 'Transfer ke rekening fiktif 1111222233 a.n. HMMI',
+                    'peran' => ['furqan' => 'admin', 'fandi' => 'editor', 'fadel' => 'anggota'],
+                    'kategori' => ['Donasi', 'Konsumsi', 'Perlengkapan', 'Transportasi'],
+                    'transaksi' => [
+                        ['Donasi', 'masuk', 300000, '2026-10-04', 'Donasi alumni untuk kegiatan himpunan'],
+                        ['Konsumsi', 'keluar', 175000, '2026-10-12', 'Konsumsi rapat kerja'],
+                        ['Perlengkapan', 'keluar', 90000, '2026-10-18', 'Spanduk dan alat tulis'],
+                        ['Transportasi', 'keluar', 60000, '2026-11-05', 'Transport kunjungan studi'],
+                    ],
+                ],
+                [
+                    'name' => 'HMMI Divisi Kewirausahaan',
+                    'opening' => 750000, 'dues' => 15000, 'code' => 'HMMIKWU6',
+                    'info' => 'Transfer ke rekening fiktif 2222333344 a.n. HMMI Divisi Kewirausahaan',
+                    'peran' => ['fandi' => 'admin', 'fadel' => 'editor', 'furqan' => 'anggota'],
+                    'kategori' => ['Penjualan', 'Bahan Produksi', 'Promosi', 'Kemasan'],
+                    'transaksi' => [
+                        ['Penjualan', 'masuk', 450000, '2026-10-07', 'Hasil penjualan bazar kampus'],
+                        ['Bahan Produksi', 'keluar', 220000, '2026-10-09', 'Bahan baku produk bazar'],
+                        ['Promosi', 'keluar', 50000, '2026-10-16', 'Cetak brosur dan stiker'],
+                        ['Kemasan', 'keluar', 40000, '2026-11-03', 'Kemasan produk'],
+                    ],
+                ],
+                [
+                    'name' => 'BEM',
+                    'opening' => 2000000, 'dues' => 25000, 'code' => 'BEM26KAS',
+                    'info' => 'Transfer ke rekening fiktif 3333444455 a.n. BEM',
+                    'peran' => ['fadel' => 'admin', 'furqan' => 'editor', 'fandi' => 'anggota'],
+                    'kategori' => ['Donasi', 'Konsumsi', 'Perlengkapan', 'Kegiatan'],
+                    'transaksi' => [
+                        ['Donasi', 'masuk', 500000, '2026-10-02', 'Dana dukungan kegiatan dari fakultas'],
+                        ['Kegiatan', 'keluar', 600000, '2026-10-14', 'Penyelenggaraan seminar'],
+                        ['Konsumsi', 'keluar', 250000, '2026-10-22', 'Konsumsi rapat pleno'],
+                        ['Perlengkapan', 'keluar', 120000, '2026-11-06', 'Perlengkapan sekretariat'],
+                    ],
+                ],
+                [
+                    'name' => 'Komunitas Freelancer Digital Nusantara',
+                    'opening' => 1500000, 'dues' => 30000, 'code' => 'FRLN2026',
+                    'info' => 'Transfer ke rekening fiktif 4444555566 a.n. Komunitas Freelancer Digital Nusantara',
+                    'peran' => ['furqan' => 'admin', 'fadel' => 'editor', 'fandi' => 'anggota'],
+                    'kategori' => ['Sponsor', 'Sewa Tempat', 'Acara Kopdar', 'Langganan Alat'],
+                    'transaksi' => [
+                        ['Sponsor', 'masuk', 800000, '2026-10-05', 'Sponsor acara kopdar bulanan'],
+                        ['Sewa Tempat', 'keluar', 350000, '2026-10-10', 'Sewa ruang co-working'],
+                        ['Acara Kopdar', 'keluar', 200000, '2026-10-24', 'Konsumsi dan cetak sertifikat kopdar'],
+                        ['Langganan Alat', 'keluar', 130000, '2026-11-04', 'Langganan alat desain bersama'],
+                    ],
+                ],
+            ];
 
-            // --- Anggota yang punya akun (Admin & Editor tidak ditagih iuran) ---
-            $org->members()->create(['user_id' => $nadia->id, 'name' => $nadia->name, 'email' => $nadia->email, 'role' => 'admin', 'is_billable' => false]);
-            $org->members()->create(['user_id' => $rafi->id, 'name' => $rafi->name, 'email' => $rafi->email, 'role' => 'editor', 'is_billable' => false]);
-            $mDimas = $org->members()->create(['user_id' => $dimas->id, 'name' => $dimas->name, 'email' => $dimas->email, 'role' => 'anggota']);
-
-            // --- Anggota yang belum punya akun (hanya kontak yang ditagih) ---
-            $mSinta = $org->members()->create(['name' => 'Sinta Maharani', 'email' => 'sinta@kaskita.demo', 'phone' => '081200000001']);
-            $mBudi = $org->members()->create(['name' => 'Budi Santoso', 'email' => 'budi@kaskita.demo', 'phone' => '081200000002']);
-            $mCitra = $org->members()->create(['name' => 'Citra Lestari', 'email' => 'citra@kaskita.demo', 'phone' => '081200000003']);
-
-            // --- Kategori ---
-            $iuran = Category::create(['organization_id' => $org->id, 'name' => 'Iuran', 'is_system' => true]);
-            $donasi = Category::create(['organization_id' => $org->id, 'name' => 'Donasi']);
-            $konsumsi = Category::create(['organization_id' => $org->id, 'name' => 'Konsumsi']);
-            $perlengkapan = Category::create(['organization_id' => $org->id, 'name' => 'Perlengkapan']);
-            $transport = Category::create(['organization_id' => $org->id, 'name' => 'Transportasi']);
-
-            // --- Tagihan Oktober 2026: lunas, belum, menunggu, lunas ---
-            $invSinta = Invoice::create([
-                'member_id' => $mSinta->id, 'period' => '2026-10', 'amount' => 25000,
-                'status' => 'lunas', 'method' => 'transfer', 'paid_at' => '2026-10-05 10:00:00',
-            ]);
-            Invoice::create([
-                'member_id' => $mDimas->id, 'period' => '2026-10', 'amount' => 25000,
-                'status' => 'belum',
-            ]);
-            Invoice::create([
-                'member_id' => $mBudi->id, 'period' => '2026-10', 'amount' => 25000,
-                'status' => 'menunggu', 'method' => 'transfer',
-                'proof_path' => 'proofs/demo-bukti-budi.svg', // berkas fiktif, belum ada di disk
-            ]);
-            $invCitra = Invoice::create([
-                'member_id' => $mCitra->id, 'period' => '2026-10', 'amount' => 25000,
-                'status' => 'lunas', 'method' => 'tunai', 'paid_at' => '2026-10-08 14:30:00',
-            ]);
-
-            // --- Transaksi otomatis dari tagihan lunas (terkunci lewat invoice_id) ---
-            $this->transaksi($org, $nadia, $iuran, 'masuk', 25000, '2026-10-05', 'Iuran Oktober 2026', $invSinta);
-            $this->transaksi($org, $nadia, $iuran, 'masuk', 25000, '2026-10-08', 'Iuran Oktober 2026', $invCitra);
-            // --- Transaksi manual ---
-            $this->transaksi($org, $nadia, $donasi, 'masuk', 200000, '2026-10-03', 'Donasi alumni untuk kegiatan');
-            $this->transaksi($org, $rafi, $konsumsi, 'keluar', 150000, '2026-10-10', 'Konsumsi rapat kerja');
-            $this->transaksi($org, $rafi, $perlengkapan, 'keluar', 85000, '2026-10-15', 'Spanduk dan alat tulis');
-            $this->transaksi($org, $nadia, $transport, 'keluar', 60000, '2026-10-20', 'Transport kunjungan kampus');
-
-            // --- Kode undangan demo ---
-            Invitation::create([
-                'organization_id' => $org->id,
-                'code' => 'BEM26KAS',
-                'created_by' => $nadia->id,
-            ]);
+            foreach ($grup as $g) {
+                $this->buatGrup($g, $akun);
+            }
         });
     }
 
-    private function transaksi(Organization $org, User $oleh, Category $kategori, string $tipe, int $jumlah, string $tanggal, string $ket, ?Invoice $invoice = null): void
+    /**
+     * @param  array<string, mixed>  $g
+     * @param  array<string, User>  $akun
+     */
+    private function buatGrup(array $g, array $akun): void
     {
-        Transaction::create([
+        // Admin pertama menjadi pembuat organisasi
+        $kunciAdmin = array_search('admin', $g['peran'], true);
+        $admin = $akun[$kunciAdmin];
+
+        $org = Organization::create([
+            'name' => $g['name'],
+            'status' => 'aktif',
+            'opening_balance' => $g['opening'],
+            'default_dues' => $g['dues'],
+            'payment_info' => $g['info'],
+            'created_by' => $admin->id,
+        ]);
+
+        // Admin dan Editor tidak ditagih iuran; Anggota ditagih (D3/D12)
+        $pelaku = []; // peran => User, untuk "dicatat oleh"
+        foreach ($g['peran'] as $kunci => $peran) {
+            $user = $akun[$kunci];
+            $anggota = $org->members()->create([
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $peran,
+                'is_billable' => $peran === 'anggota',
+            ]);
+            $pelaku[$peran] = $user;
+
+            if ($peran === 'anggota') {
+                // Tagihan bulan ini belum dibayar, supaya alur pembayaran bisa didemokan
+                Invoice::create([
+                    'member_id' => $anggota->id, 'period' => '2026-11',
+                    'amount' => $g['dues'], 'status' => 'belum',
+                ]);
+            }
+        }
+
+        $kategori = ['Iuran' => Category::create(['organization_id' => $org->id, 'name' => 'Iuran', 'is_system' => true])];
+        foreach ($g['kategori'] as $nama) {
+            $kategori[$nama] = Category::create(['organization_id' => $org->id, 'name' => $nama]);
+        }
+
+        foreach ($g['transaksi'] as [$kat, $tipe, $jumlah, $tanggal, $ket]) {
+            Transaction::create([
+                'organization_id' => $org->id,
+                'category_id' => $kategori[$kat]->id,
+                'created_by' => $tipe === 'masuk' ? $admin->id : ($pelaku['editor'] ?? $admin)->id,
+                'type' => $tipe,
+                'amount' => $jumlah,
+                'tanggal' => $tanggal,
+                'description' => $ket,
+            ]);
+        }
+
+        Invitation::create([
             'organization_id' => $org->id,
-            'category_id' => $kategori->id,
-            'invoice_id' => $invoice?->id,
-            'created_by' => $oleh->id,
-            'type' => $tipe,
-            'amount' => $jumlah,
-            'tanggal' => $tanggal,
-            'description' => $ket,
+            'code' => $g['code'],
+            'created_by' => $admin->id,
         ]);
     }
 }

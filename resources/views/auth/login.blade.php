@@ -39,20 +39,6 @@
         </button>
     </form>
 
-    @if (app()->environment('local'))
-        <div class="mt-5 rounded-xl border border-line bg-white/60 p-4">
-            <div class="text-xs font-bold text-ink">Akun demo presentasi</div>
-            <div class="mt-1 text-[11px] text-mute">Gunakan kata sandi yang sama untuk semua akun:</div>
-            <div class="mt-2 rounded-md bg-soft px-3 py-2 font-mono text-xs font-bold text-deep">KitaDemo2026!</div>
-            <ul class="mt-3 space-y-1.5 text-xs text-mute">
-                <li>Owner/Dev · <b class="text-ink">owner@kaskita.demo</b></li>
-                <li>Admin · <b class="text-ink">admin@kaskita.demo</b></li>
-                <li>Editor · <b class="text-ink">editor@kaskita.demo</b></li>
-                <li>Anggota · <b class="text-ink">anggota@kaskita.demo</b></li>
-            </ul>
-        </div>
-    @endif
-
     @if (Route::has('register'))
         <p class="mt-6 text-center text-mute">
             Belum punya akun? <a href="{{ route('register') }}" class="font-bold text-brand hover:text-brand-dark">Daftar</a>

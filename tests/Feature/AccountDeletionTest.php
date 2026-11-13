@@ -6,7 +6,7 @@ use App\Models\Category;
 use App\Models\Organization;
 use App\Models\Transaction;
 use App\Models\User;
-use Database\Seeders\DemoOrganizationSeeder;
+use Database\Seeders\TestOrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,7 +23,7 @@ class AccountDeletionTest extends TestCase
 
     public function test_admin_tunggal_tidak_bisa_menghapus_akun(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $nadia = $this->user('admin@kaskita.demo');
 
         $this->actingAs($nadia)->from('/profile')
@@ -38,7 +38,7 @@ class AccountDeletionTest extends TestCase
 
     public function test_kata_sandi_salah_tetap_ditolak(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
 
         $this->actingAs($this->user('anggota@kaskita.demo'))->from('/profile')
             ->delete('/profile', ['password' => 'salah'])
@@ -49,7 +49,7 @@ class AccountDeletionTest extends TestCase
 
     public function test_admin_boleh_menghapus_akun_bila_ada_admin_lain_dan_organisasi_tetap_ada(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $org = Organization::firstOrFail();
         $nadia = $this->user('admin@kaskita.demo');
         $org->members()->where('user_id', $this->user('editor@kaskita.demo')->id)->update(['role' => 'admin']);
@@ -63,7 +63,7 @@ class AccountDeletionTest extends TestCase
 
     public function test_editor_yang_pernah_mencatat_transaksi_bisa_menghapus_akun(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $org = Organization::firstOrFail();
         $rafi = $this->user('editor@kaskita.demo');
         $trx = Transaction::create([
@@ -84,7 +84,7 @@ class AccountDeletionTest extends TestCase
 
     public function test_menghapus_akun_menonaktifkan_keanggotaan_dan_riwayat_tagihan_tetap(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $dimas = $this->user('anggota@kaskita.demo');
         $member = $dimas->memberships()->firstOrFail();
         $tagihan = $member->invoices()->count();
@@ -100,7 +100,7 @@ class AccountDeletionTest extends TestCase
 
     public function test_organisasi_membantu_menghitung_admin_tunggal(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $org = Organization::firstOrFail();
 
         $this->assertSame([$org->id], $this->user('admin@kaskita.demo')->organizationsWhereSoleAdmin()->pluck('id')->all());

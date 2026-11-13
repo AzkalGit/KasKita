@@ -6,22 +6,25 @@ use Tests\TestCase;
 
 class LoginPageTest extends TestCase
 {
-    public function test_kotak_akun_demo_tidak_tampil_di_luar_local(): void
+    public function test_halaman_login_tidak_menampilkan_akun_demo_di_luar_local(): void
     {
         $this->get('/login')
             ->assertOk()
             ->assertSee('Masuk ke akun KasKita kamu.')
-            ->assertDontSee('KitaDemo2026!')
-            ->assertDontSee('owner@kaskita.demo');
+            ->assertDontSee('Akun demo presentasi')
+            ->assertDontSee('azkal123')
+            ->assertDontSee('furqan@gmail.com');
     }
 
-    public function test_kotak_akun_demo_tampil_di_lingkungan_local(): void
+    public function test_halaman_login_tidak_menampilkan_akun_demo_di_lingkungan_local(): void
     {
         $this->app['env'] = 'local';
 
         $this->get('/login')
             ->assertOk()
-            ->assertSee('Akun demo presentasi')
-            ->assertSee('KitaDemo2026!');
+            ->assertSee('Masuk ke akun KasKita kamu.')
+            ->assertDontSee('Akun demo presentasi')
+            ->assertDontSee('azkal123')
+            ->assertDontSee('furqan@gmail.com');
     }
 }

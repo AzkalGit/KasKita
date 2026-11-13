@@ -29,14 +29,7 @@
                     </p>
                 </div>
 
-                @if (app()->environment('local'))
-                    <div class="w-72 rounded-2xl bg-white/10 px-5 py-4">
-                        <div class="text-xs text-[#a9d5d0]">Mode prototipe presentasi</div>
-                        <div class="mt-1 text-2xl font-extrabold">4 profil demo</div>
-                    </div>
-                @else
-                    <div></div>
-                @endif
+                <div></div>
             </div>
 
             {{-- Kolom kanan: formulir --}}

@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
-use Database\Seeders\DemoOrganizationSeeder;
+use Database\Seeders\TestOrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -39,7 +39,7 @@ class MembershipLinkingTest extends TestCase
 
     public function test_mendaftar_dengan_email_kontak_tidak_langsung_menjadi_anggota(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $org = Organization::firstOrFail();
 
         $user = $this->register('sinta@kaskita.demo');
@@ -52,7 +52,7 @@ class MembershipLinkingTest extends TestCase
 
     public function test_setelah_email_diverifikasi_akun_tertaut_sebagai_anggota(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $org = Organization::firstOrFail();
         $user = $this->register('sinta@kaskita.demo');
 
@@ -113,7 +113,7 @@ class MembershipLinkingTest extends TestCase
 
     public function test_akun_yang_dihapus_tidak_mewariskan_keanggotaan_ke_pendaftar_berikutnya(): void
     {
-        $this->seed(DemoOrganizationSeeder::class);
+        $this->seed(TestOrganizationSeeder::class);
         $dimas = User::where('email', 'anggota@kaskita.demo')->firstOrFail();
 
         $this->actingAs($dimas)->delete('/profile', ['password' => 'KitaDemo2026!'])->assertRedirect('/');

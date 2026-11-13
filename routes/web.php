@@ -13,8 +13,11 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
+// Halaman awal: tamu ke login, yang sudah masuk ke daftar organisasi
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check()
+        ? redirect()->route('organizations.index')
+        : redirect()->route('login');
 });
 
 // Halaman "dashboard" bawaan Breeze diganti pengalihan ke daftar organisasi.
