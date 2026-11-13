@@ -1,81 +1,77 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Organisasi</h2>
+        <h1 class="text-2xl font-extrabold tracking-tight">Organisasi</h1>
+        <p class="mt-0.5 text-mute">Pilih organisasi yang ingin dibuka, atau buat dan gabung ke organisasi baru.</p>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="mx-auto max-w-4xl space-y-4 px-4 py-8 sm:px-6 lg:px-8">
+        @if (session('status'))
+            <div class="rounded-2xl border border-line bg-soft px-4 py-3 font-semibold text-deep">{{ session('status') }}</div>
+        @endif
 
-            @if (session('status'))
-                <div class="p-4 bg-green-50 text-green-800 rounded">{{ session('status') }}</div>
-            @endif
+        {{-- Daftar organisasi milikku --}}
+        <div class="rounded-2xl border border-line bg-white p-5">
+            <h3 class="mb-2 text-base font-bold">Organisasi yang kamu ikuti</h3>
 
-            {{-- Daftar organisasi milikku --}}
-            <div class="bg-white shadow sm:rounded-lg p-6">
-                <h3 class="font-semibold mb-4">Organisasi yang kamu ikuti</h3>
-
-                @forelse ($memberships as $m)
-                    <div class="flex items-center justify-between border-b py-3 last:border-0">
-                        <div>
-                            <div class="font-medium">{{ $m->organization->name }}</div>
-                            <div class="text-sm text-gray-500">
-                                Peran: {{ ucfirst($m->role) }}
-                                @unless ($m->organization->isActive())
-                                    · <span class="text-red-600">nonaktif</span>
-                                @endunless
-                            </div>
+            @forelse ($memberships as $m)
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line py-3.5 last:border-0">
+                    <div>
+                        <div class="font-semibold">{{ $m->organization->name }}</div>
+                        <div class="text-xs text-mute">
+                            Peran: {{ ucfirst($m->role) }}
+                            @unless ($m->organization->isActive())
+                                · <span class="text-expense">nonaktif</span>
+                            @endunless
                         </div>
+                    </div>
 
-                        <div class="flex items-center gap-4">
-                            @if ($m->organization->isActive())
-                                <a href="{{ route('organizations.dashboard', $m->organization) }}"
-                                   class="inline-flex items-center px-4 py-2 bg-green-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                                    Buka
-                                </a>
+                    <div class="flex items-center gap-4">
+                        @if ($m->organization->isActive())
+                            <a href="{{ route('organizations.dashboard', $m->organization) }}"
+                               class="rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-dark">Buka</a>
 
-                                {{-- Admin belum bisa keluar (serah-terima belum ada) --}}
-                                @if ($m->role !== 'admin')
-                                    <form method="POST" action="{{ route('members.leave', $m->organization) }}"
-                                          onsubmit="return confirm({{ Js::from('Keluar dari '.$m->organization->name.'?') }})">
-                                        @csrf
-                                        <button class="text-sm text-red-600 font-medium">Keluar</button>
-                                    </form>
-                                @endif
-                            @else
-                                <span class="text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-600">Nonaktif</span>
+                            {{-- Admin belum bisa keluar (serah-terima belum ada) --}}
+                            @if ($m->role !== 'admin')
+                                <form method="POST" action="{{ route('members.leave', $m->organization) }}"
+                                      onsubmit="return confirm({{ Js::from('Keluar dari '.$m->organization->name.'?') }})">
+                                    @csrf
+                                    <button class="text-sm font-semibold text-expense hover:opacity-80">Keluar</button>
+                                </form>
                             @endif
-                        </div>
+                        @else
+                            <x-badge tone="gray">Nonaktif</x-badge>
+                        @endif
                     </div>
-                @empty
-                    <p class="text-gray-500">Kamu belum tergabung di organisasi mana pun. Buat organisasi baru atau gabung dengan kode di bawah.</p>
-                @endforelse
-            </div>
+                </div>
+            @empty
+                <p class="text-mute">Kamu belum tergabung di organisasi mana pun. Buat organisasi baru atau gabung dengan kode di bawah.</p>
+            @endforelse
+        </div>
 
-            <div class="grid md:grid-cols-2 gap-6">
-                {{-- Buat organisasi --}}
-                <form method="POST" action="{{ route('organizations.store') }}" class="bg-white shadow sm:rounded-lg p-6 space-y-4">
-                    @csrf
-                    <h3 class="font-semibold">Buat organisasi baru</h3>
-                    <div>
-                        <x-input-label for="name" value="Nama organisasi" />
-                        <x-text-input id="name" name="name" class="block mt-1 w-full" :value="old('name')" required />
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                    </div>
-                    <x-primary-button>Buat</x-primary-button>
-                </form>
+        <div class="grid gap-4 md:grid-cols-2">
+            {{-- Buat organisasi --}}
+            <form method="POST" action="{{ route('organizations.store') }}" class="space-y-4 rounded-2xl border border-line bg-white p-5">
+                @csrf
+                <h3 class="text-base font-bold">Buat organisasi baru</h3>
+                <div>
+                    <x-input-label for="name" value="Nama organisasi" />
+                    <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name')" required />
+                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                </div>
+                <x-primary-button>Buat</x-primary-button>
+            </form>
 
-                {{-- Gabung dengan kode --}}
-                <form method="POST" action="{{ route('organizations.join') }}" class="bg-white shadow sm:rounded-lg p-6 space-y-4">
-                    @csrf
-                    <h3 class="font-semibold">Gabung dengan kode</h3>
-                    <div>
-                        <x-input-label for="code" value="Kode undangan" />
-                        <x-text-input id="code" name="code" class="block mt-1 w-full uppercase" :value="old('code')" required />
-                        <x-input-error :messages="$errors->get('code')" class="mt-2" />
-                    </div>
-                    <x-primary-button>Gabung</x-primary-button>
-                </form>
-            </div>
+            {{-- Gabung dengan kode --}}
+            <form method="POST" action="{{ route('organizations.join') }}" class="space-y-4 rounded-2xl border border-line bg-white p-5">
+                @csrf
+                <h3 class="text-base font-bold">Gabung dengan kode</h3>
+                <div>
+                    <x-input-label for="code" value="Kode undangan" />
+                    <x-text-input id="code" name="code" class="mt-1 block w-full uppercase" :value="old('code')" required />
+                    <x-input-error :messages="$errors->get('code')" class="mt-2" />
+                </div>
+                <x-primary-button>Gabung</x-primary-button>
+            </form>
         </div>
     </div>
 </x-app-layout>
