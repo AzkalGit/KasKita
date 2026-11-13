@@ -21,13 +21,13 @@
     <body class="bg-canvas font-sans text-sm text-ink antialiased">
         @if ($org)
             <div x-data="{ open: false }" class="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
-                <div class="flex h-14 items-center justify-between bg-deep px-4 lg:hidden">
+                <div class="flex h-14 items-center gap-2 bg-deep px-4 lg:hidden">
+                    <button type="button" @click="open = true" class="-ml-2 p-2 text-white" aria-label="Buka menu">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    </button>
                     <a href="{{ route('organizations.dashboard', $org) }}" class="text-xl font-extrabold tracking-tight text-white">
                         Kas<b class="text-mint">Kita</b>
                     </a>
-                    <button type="button" @click="open = true" class="p-2 text-white" aria-label="Buka menu">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                    </button>
                 </div>
 
                 <div x-show="open" style="display: none" @click="open = false" class="fixed inset-0 z-30 bg-black/40 lg:hidden"></div>
