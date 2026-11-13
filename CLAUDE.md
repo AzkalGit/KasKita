@@ -2,7 +2,7 @@
 
 > Dokumen serah-terima antar sesi Claude, **versi ringkas**. Fokus: aturan kerja dan langkah berikutnya.
 > Detail langkah yang sudah selesai (aturan bisnis rinci, daftar tes, riwayat) ada di **`docs/RIWAYAT.md`**. Jangan ditempel utuh; minta bagian tertentu bila perlu.
-> Terakhir diperbarui: **13 Nov 2026** · Tes: **229 lulus** (dijalankan pemilik) · Laravel 13 + Breeze (Blade).
+> Terakhir diperbarui: **13 Nov 2026** · Tes: **229 lulus** (angka terakhir yang diketahui; jalankan ulang) · Laravel 13 + Breeze (Blade).
 
 ## 0. Cara kerja dan aturan
 
@@ -130,6 +130,7 @@ tests/Feature/         satu berkas per modul (mis. ReportTest, OwnerPanelTest, L
 - **Tampilan (H, kode selesai):** semua halaman memakai token dan komponen KasKita (lihat bagian 2): sidebar hijau tua + topbar, Dashboard (grafik CSS, banner, badge Iuran), login dua kolom, auth berbahasa Indonesia, paginasi khusus.
 
 ## 7. Data demo dan pengujian
+> **Data demo di bawah ini AKAN DIGANTI** oleh Langkah I-0 (bagian 9). Jangan menulis tes baru yang bergantung pada akun `*.kaskita.demo`.
 
 Seeder (`migrate:fresh --seed`), kata sandi semua akun `KitaDemo2026!`:
 
@@ -173,11 +174,46 @@ Organisasi **BEM Fakultas Teknologi**: saldo awal 500.000, iuran 25.000, kode `B
 
 ## 9. Langkah berikutnya (satu langkah per percakapan)
 
-**Selesai:** A-G dan H (kode tampilan semua halaman). Sisa H adalah peninjauan di browser.
+**Selesai:** A-G dan H (kode tampilan semua halaman). Commit dan push `fitur/laravel-fondasi` direncanakan setelah cleanup; cek `git log` dan `git status --short` dulu.
+
+### Langkah I-0 — Persiapan presentasi (kerjakan dulu)
+
+**Keputusan pemilik:**
+- Data lama (akun seeder dan non-seeder, organisasi uji) dihapus lewat `migrate:fresh --seed`.
+- Seeder hanya berisi **4 akun utama**, kata sandi mudah diingat, hanya untuk demo lokal:
+
+| Nama | Email | Kata sandi | Peran |
+| --- | --- | --- | --- |
+| M. Azkal Azkia | azkal@gmail.com | azkal123 | Owner (platform, D17: tidak masuk organisasi) |
+| M. Dwi Furqan | furqan@gmail.com | furqan123 | Admin |
+| Raifandi Afriza | fandi@gmail.com | fandi123 | Editor |
+| M. Fadel Fadlurrahman Syabri | fadel@gmail.com | fadel123 | Anggota |
+
+- Tema organisasi: **HMMI (Himpunan Mahasiswa Manajemen Informatika)**, minimal **3 grup**. Usulan nama (menunggu konfirmasi pemilik): HMMI, Panitia MI Fest 2026, Divisi Kewirausahaan HMMI. Peran 4 akun utama per grup ditentukan bersama Claude.
+- **20+ akun acak** (nama Indonesia, email terverifikasi, kata sandi sama dan mudah) dibuat lewat **perintah Artisan terpisah** (usul: `php artisan kaskita:isi-demo`), BUKAN lewat `DatabaseSeeder`; dijalankan manual setelah `migrate:fresh --seed`. Tersebar di ketiga grup dengan peran campur; tagihan campur (lunas/menunggu/belum, tanpa berkas bukti); transaksi realistis per grup.
+- **Halaman awal `/`:** usul redirect ke `/login` (tamu) atau `/organisasi` (sudah masuk); hapus `welcome.blade.php`. Perhatikan aturan 12 (`RoutingTest`) dan tes yang memeriksa `/`. Halaman "tentang" opsional belakangan.
+- **Kotak demo di login:** rapikan jadi tabel kecil berisi 4 akun utama; tetap hanya bila `app()->environment('local')`. Kolom kiri `layouts/guest` ("4 profil demo") disesuaikan.
+- **Peringatan:** kata sandi lemah dan terlihat hanya untuk localhost. Jangan dipasang di server publik. Jangan dipakai di akun sungguhan. `OwnerSeeder` dan seeder demo memakai kata sandi tetap (lihat bagian 8).
+
+**Urutan kerja:**
+1. Minta pemilik menjalankan `git status --short`, lalu menempel hasil:
+   ```bash
+   grep -rln "kaskita.demo" tests app database resources routes
+   cat database/seeders/DatabaseSeeder.php database/seeders/OwnerSeeder.php database/seeders/DemoOrganizationSeeder.php
+   cat database/factories/UserFactory.php app/Models/User.php app/Models/OrganizationMember.php
+   grep -n "welcome\|Route::get('/'" routes/web.php
+   grep -rn "'/'" tests
+   ```
+2. Tulis ulang seeder (4 akun utama + 3 grup HMMI) dan perbarui tes yang memakai `*.kaskita.demo` (mis. `LoginPageTest`, `OwnerPanelTest`, `DashboardTest`).
+3. Tulis perintah Artisan `kaskita:isi-demo` (+ tes sederhana: jumlah akun, email terverifikasi, tidak dipanggil `DatabaseSeeder`).
+4. Redirect `/` dan hapus `welcome.blade.php` (+ tes).
+5. Rapikan kotak demo di `auth/login.blade.php` dan `layouts/guest.blade.php`.
+6. **Hamburger hilang:** minta pemilik menyebut halaman dan lebar jendela, lalu jalankan `grep -n "Buka menu" resources/views/layouts/app.blade.php`. Ingat: hamburger hanya tampil di bawah 1024px pada halaman ber-sidebar (`lg:hidden`); halaman Organisasi/Profil/Panel Owner memakai topbar tanpa hamburger.
+7. Pemilik: `migrate:fresh --seed`, `php artisan kaskita:isi-demo`, `php artisan optimize:clear`, `php artisan test`, lalu coba login ke-4 akun di browser.
+8. Setelah selesai: tambahan `docs/RIWAYAT.md` dan `CLAUDE.md` baru (bagian 7 diganti dengan data demo baru).
 
 ### Langkah I — Peninjauan dan penutup
-
-1. **Telusur browser** halaman yang belum dicoba (daftar di bagian 7), per peran (Admin, Editor, Anggota, Owner), termasuk layar HP. Laporkan yang janggal ke Claude per halaman.
+1. **Telusur browser** halaman yang belum dicoba (bagian 7), per peran, termasuk layar HP. Laporkan yang janggal ke Claude per halaman.
 2. Kecilkan sisa tampilan: ikon sidebar, seragamkan input Login dan dropdown Jenis.
 3. Perbaiki `q` wildcard (kecil, ada tes), lalu pertimbangkan filter tambahan Transaksi dan nota (D10).
-4. **Terakhir:** atur D8 (locale/timezone), perbarui `README.md`, hapus `welcome.blade.php`, syarat lingkungan `OwnerSeeder`, uji di MariaDB, uji mutasi otorisasi F2 dan `EnsureOwner`, Pull Request ke `main` (perhatikan GitHub Pages), tinjau masalah terbuka.
+4. **Terakhir:** atur D8 (locale/timezone), perbarui `README.md`, syarat lingkungan `OwnerSeeder`, uji di MariaDB, uji mutasi otorisasi F2 dan `EnsureOwner`, Pull Request ke `main` (perhatikan GitHub Pages), tinjau masalah terbuka.
