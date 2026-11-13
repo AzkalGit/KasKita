@@ -180,4 +180,3 @@ Tempel sebelum menulis kode: `cat prototipe-statis/dashboard.html`, `ls -la prot
 
 **Urutan halaman sesudahnya** (satu per percakapan): Daftar + Lupa/Reset kata sandi (terjemahkan teks Breeze) → Transaksi → Iuran (+ perbaiki sisa gaya) → Anggota → Laporan (+ Tutup buku) → Pengaturan (Kategori/Undangan) → Organisasi (daftar/buat/gabung) → Profil → Panel Owner (periksa tampilan tanpa gaya) → ikon sidebar.
 **Terakhir:** atur D8 (locale/timezone), perbarui `README.md`, hapus `welcome.blade.php`, syarat lingkungan `OwnerSeeder`, uji di MariaDB, nota transaksi (D10), Pull Request ke `main` (perhatikan GitHub Pages), tinjau masalah terbuka.
-EOF

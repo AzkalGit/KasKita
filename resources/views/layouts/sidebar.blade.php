@@ -1,3 +1,10 @@
+@php
+    $menungguIuran = auth()->user()->can('manageInvoices', $org)
+        ? \App\Models\Invoice::inOrganization($org)
+            ->where('invoices.status', \App\Models\Invoice::STATUS_MENUNGGU)
+            ->count()
+        : 0;
+@endphp
 <aside
     :class="open ? 'translate-x-0' : '-translate-x-full'"
     class="fixed inset-y-0 left-0 z-40 flex w-60 flex-col gap-1 overflow-y-auto bg-deep p-4 pt-6 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
@@ -13,7 +20,12 @@
         <x-side-link :href="route('transactions.index', $org)" :active="request()->routeIs('transactions.*')">Transaksi</x-side-link>
     @endcan
     @can('viewInvoices', $org)
-        <x-side-link :href="route('invoices.index', $org)" :active="request()->routeIs('invoices.*')">Iuran</x-side-link>
+         <x-side-link :href="route('invoices.index', $org)" :active="request()->routeIs('invoices.*')">
+            Iuran
+            @if ($menungguIuran > 0)
+                <span data-badge-iuran class="ml-auto rounded-full bg-expense px-2 py-0.5 text-xs font-bold text-white">{{ $menungguIuran }}</span>
+            @endif
+        </x-side-link>
     @endcan
     @can('manageMembers', $org)
         <x-side-link :href="route('members.index', $org)" :active="request()->routeIs('members.*')">Anggota</x-side-link>
