@@ -399,3 +399,23 @@ View prototipe halaman demi halaman (putuskan D7), navigasi/sidebar organisasi, 
 - Bila tampilan tampak tanpa gaya (sidebar jadi teks polos): hentikan `npm run dev`, jalankan `php artisan optimize:clear`, `npm run dev` lagi, lalu Ctrl+Shift+R. Penyebabnya server Vite belum menangkap `tailwind.config.js` baru.
 - Dicoba di browser oleh pemilik: sidebar dan dashboard (isi masih gaya lama), login.
 - **Belum ditinjau:** tampilan `/register`, `/forgot-password`, `/reset-password`.
+
+## Langkah H (lanjutan) — penyeragaman tampilan · 13 Nov 2026
+
+**Tes:** 229 lulus (SQLite di memori). Uji mutasi: belum dilakukan. Aturan bisnis baru: tidak ada (hanya tampilan).
+
+**Selesai:**
+- Dashboard sesuai prototipe: kartu ringkasan, grafik batang CSS murni, transaksi terakhir tanpa nama anggota (D2), banner bukti menunggu, badge angka Iuran di sidebar (hanya pengelola). Ada `DashboardTest`.
+- Komponen Breeze diganti ke token KasKita: `primary-button`, `secondary-button`, `danger-button`, `text-input`, `input-label`.
+- Komponen baru: `components/badge` (tone green/yellow/red/gray) dan `components/select-input`.
+- View paginasi khusus: `resources/views/vendor/pagination/tailwind.blade.php` (Indonesia, warna KasKita; dipakai otomatis oleh `->links()`).
+- Halaman dirapikan (judul + subjudul, kartu `rounded-2xl border-line`, tabel, badge): Transaksi (+ form tambah/ubah), Iuran, Anggota, Laporan (+ Tutup buku), Kategori, Undangan, Organisasi, Panel Owner, Profil (+ partial), Daftar, Lupa/Reset kata sandi, Verifikasi email, Konfirmasi kata sandi.
+- Tombol hamburger di layar kecil dipindah ke kiri (sejajar arah buka sidebar).
+- `layouts/navigation.blade.php` dihapus (tidak terpakai; grep kosong).
+
+**Catatan:**
+- Nama rute, `@can`, `confirm()`, nama field, dan kunci flash tidak berubah.
+- Halaman tanpa sidebar (Organisasi, Profil, Panel Owner) membawa wadahnya sendiri (`mx-auto max-w-* px-4 py-8`).
+- Fitur prototipe yang BELUM ada di Laravel dan sengaja tidak ditambahkan: filter kategori dan rentang tanggal di Transaksi, ekspor CSV di Transaksi, lampiran nota (D10).
+- Belum ditinjau di browser: semua halaman selain Dashboard dan Transaksi (modal Hapus akun, tabel Undangan/Panel Owner di HP, dropdown peran di Anggota, tombol Salin, paginasi).
+- Belum ditinjau: Login memakai input gaya manual (`rounded-[10px]`), sudut sedikit berbeda dari komponen (`rounded-xl`).
