@@ -1,87 +1,110 @@
 # KasKita
 
-Aplikasi pencatatan kas organisasi (iuran, donasi, pengeluaran) dengan peran **Owner/Dev, Admin, Editor, dan Anggota**. Satu akun bisa ikut banyak organisasi, dan peran ditentukan per organisasi.
+Aplikasi pencatatan kas organisasi (iuran, donasi, pengeluaran) berbasis web. Satu akun bisa ikut banyak organisasi, dan **peran ditentukan per organisasi**: Admin, Editor, atau Anggota. Ada juga peran **Owner** di tingkat platform yang terpisah dari organisasi dan hanya melihat metadata, tidak data keuangan.
 
-> **Status: prototipe statis untuk desain dan alur.** HTML + CSS + satu file JavaScript, data disimpan di `localStorage` browser. Tidak ada server atau database. Rencana berikutnya adalah mengimplementasikannya di **Laravel** (lihat [CLAUDE.md](CLAUDE.md), bagian "Panduan migrasi ke Laravel").
->
-> Dokumen ini disusun dari pembacaan kode pada commit `4a99c24` (9 Oktober 2026). Catatan teknis dari sesi sebelumnya ada di [KASKITA-STATUS.txt](KASKITA-STATUS.txt).
+> **Status: aplikasi Laravel yang sudah berjalan, belum dirilis.** Cocok untuk demo dan penilaian di komputer lokal. Belum semua halaman ditelusuri di browser sungguhan (lihat bagian "Status pengujian").
 
-## Menjalankan
+Proyek kuliah Sistem Informasi, semester 3.
 
-Tidak perlu build atau instalasi.
+## Fitur
 
-1. Buka `index.html` di browser (otomatis diarahkan ke halaman masuk), **atau** layani foldernya dengan server statis apa pun, misalnya Live Server di VS Code atau folder `www` Laragon.
-2. Perlu internet hanya untuk memuat font Plus Jakarta Sans dari Google Fonts. Tanpa internet, tampilan tetap berjalan dengan font cadangan.
-
-Data tersimpan **per alamat (origin)**. Membuka lewat `file://` dan lewat `http://localhost` dianggap dua tempat penyimpanan berbeda, jadi data tidak akan muncul di keduanya sekaligus. Pilih salah satu cara dan konsisten.
-
-## Akun demo
-
-Kata sandi semua akun demo: `KitaDemo2026!`
-
-| Profil | Email | Yang bisa dilakukan |
-| --- | --- | --- |
-| Owner/Dev | `owner@kaskita.demo` | Hanya panel platform: status organisasi (aktif/nonaktif), reset data demo |
-| Admin | `admin@kaskita.demo` | Semua fitur organisasi |
-| Editor | `editor@kaskita.demo` | Catat dan ubah transaksi, baca laporan |
-| Anggota | `anggota@kaskita.demo` | Lihat dan bayar tagihan iuran sendiri |
-
-Organisasi demo: **BEM Fakultas Teknologi**, kode undangan `BEM26KAS`. Seluruh isinya fiktif.
-
-## Alur utama
-
-1. **Daftar** akun (tanpa memilih organisasi).
-2. Di halaman **Organisasi**: *buat organisasi baru* (pembuat otomatis menjadi **Admin**) atau *gabung dengan kode undangan* (menjadi **Anggota**).
-3. **Admin** membagikan kode undangan dari halaman Anggota, menambahkan anggota, mengubah Anggota menjadi Editor (atau sebaliknya), membuat tagihan iuran, dan memverifikasi bukti pembayaran.
-4. **Anggota** membuka tagihan miliknya, mengunggah bukti transfer (gambar), lalu menunggu verifikasi.
-5. Saat Admin menyetujui, tagihan menjadi *Lunas* dan **pemasukan otomatis tercatat** di transaksi.
+- **Akun:** daftar dan masuk (Laravel Breeze), email wajib terverifikasi.
+- **Organisasi dan undangan:** buat organisasi (pembuat menjadi Admin), gabung dengan kode undangan (menjadi Anggota), kelola kode undangan.
+- **Anggota:** ubah peran Anggota dan Editor, nonaktifkan atau aktifkan, tandai anggota yang ditagih iuran.
+- **Kategori dan transaksi:** catat pemasukan dan pengeluaran, filter per bulan, jenis, dan kata kunci. Saldo dashboard dihitung dari saldo awal ditambah pemasukan dikurangi pengeluaran.
+- **Iuran:** buat tagihan bulanan, lunas tunai, ajukan pembayaran dengan bukti (disimpan privat), setujui atau tolak. Saat lunas, pemasukan otomatis tercatat dan terkunci.
+- **Laporan:** per bulan atau minggu, saldo awal dan akhir, rincian per kategori, daftar tunggakan (khusus Admin), unduh CSV.
+- **Tutup buku:** Admin menutup bulan lampau, sehingga transaksi bulan itu tidak bisa ditambah, diubah, atau dihapus. Bulan bisa dibuka lagi.
+- **Panel Owner:** aktifkan atau nonaktifkan organisasi. Organisasi nonaktif tidak bisa diakses anggotanya.
+- **Log aktivitas** untuk aksi penting.
 
 ## Hak akses per peran
 
-| Halaman | Owner/Dev | Admin | Editor | Anggota |
-| --- | :-: | :-: | :-: | :-: |
-| Panel Owner/Dev (`owner.html`) | ya | – | – | – |
-| Organisasi (pilih, buat, gabung) | – | ya | ya | ya |
-| Dashboard | – | ya | ya | – |
-| Transaksi: lihat | – | ya | ya | – |
-| Transaksi: catat dan ubah | – | ya | ya | – |
-| Transaksi: hapus | – | ya | – | – |
-| Iuran: kelola tagihan dan verifikasi | – | ya | – | – |
-| Iuran: lihat dan bayar milik sendiri | – | – | – | ya |
-| Anggota dan kode undangan | – | ya | – | – |
-| Laporan (termasuk tunggakan) | – | ya | ya (tanpa tunggakan) | – |
-| Pengaturan | – | ya | – | – |
+| Kemampuan | Admin | Editor | Anggota |
+| --- | :-: | :-: | :-: |
+| Lihat dashboard, transaksi, tagihan (Anggota hanya tagihan miliknya) | ya | ya | ya |
+| Lihat laporan dan unduh CSV | ya | ya | – |
+| Lihat tunggakan | ya | – | – |
+| Kelola transaksi dan tagihan | ya | ya | – |
+| Hapus transaksi, kelola anggota, undangan, pengaturan, tutup buku | ya | – | – |
 
-Tabel ini menggambarkan **perilaku kode saat ini**. Pembatasan ini hanya tampilan di sisi browser, bukan keamanan sungguhan.
+Tak seorang pun, termasuk Admin, bisa melunasi, menyetujui, atau membatalkan tagihannya sendiri. Pengelola lain yang memverifikasi.
 
-## Halaman
+## Teknologi
 
-| File | Fungsi |
+- Laravel 13, PHP 8.4.1 atau lebih baru
+- Blade dengan Tailwind CSS lewat Vite
+- MariaDB atau MySQL untuk penggunaan lokal, SQLite di memori untuk tes
+- Node.js 22
+
+## Menjalankan di komputer lokal
+
+Prasyarat: PHP 8.4+, Composer, Node.js, dan MariaDB atau MySQL dengan database kosong.
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+# isi pengaturan DB_* di .env sesuai database lokalmu
+php artisan migrate:fresh --seed     # MENGHAPUS isi database lokal
+php artisan kaskita:isi-demo         # opsional: akun, tagihan, dan transaksi demo
+npm install
+```
+
+Lalu jalankan di dua terminal:
+
+```bash
+npm run dev
+php artisan serve
+```
+
+Buka `http://127.0.0.1:8000`.
+
+`migrate:fresh --seed` membuat satu akun Owner, tiga akun utama dengan peran berbeda di tiap organisasi, dan empat organisasi demo. `kaskita:isi-demo` menambah akun, tagihan, dan transaksi (hanya jalan di lingkungan `local` atau `testing`). Daftar akun dan kata sandi demo tidak dicantumkan di sini. Lihat seeder di `database/seeders/` atau tanyakan kepada pemilik repo.
+
+> **Peringatan:** seeder memuat kata sandi tetap dan lemah. Jangan menjalankannya di server publik.
+
+Bila tampilan tampak tanpa gaya: hentikan `npm run dev`, jalankan `php artisan optimize:clear`, jalankan `npm run dev` lagi, lalu muat ulang browser dengan Ctrl+Shift+R.
+
+## Menjalankan tes
+
+```bash
+php artisan test
+```
+
+Pada pembaruan terakhir, 236 tes otomatis lulus. Jalankan ulang untuk angka terkini.
+
+## Status pengujian
+
+- Tes otomatis mencakup otorisasi, isolasi antar organisasi, iuran, laporan, dan tutup buku.
+- Seeder dan perintah `kaskita:isi-demo` sudah berjalan di MariaDB lokal.
+- Sebagian halaman belum ditelusuri langsung di browser: tampilan layar HP, alur beberapa peran, dan ekspor CSV di Excel atau LibreOffice. CSV berkoma bisa terbuka dalam satu kolom di Excel berlokal Indonesia.
+
+## Keterbatasan yang diketahui
+
+- Zona waktu dan bahasa aplikasi belum diatur ke Indonesia. Tanggal pelunasan dan bulan bawaan laporan bisa meleset sehari.
+- Pencarian transaksi memperlakukan `%` dan `_` sebagai wildcard.
+- Laporan tidak dipaginasi.
+- Lampiran nota untuk transaksi manual belum ada. Yang tersedia baru bukti bayar iuran.
+- Laporan hanya tersedia dalam bentuk CSV, tanpa PDF.
+- Belum ada serah-terima Admin, promosi ke Admin, atau hapus organisasi dari antarmuka.
+
+## Struktur repositori
+
+| Lokasi | Isi |
 | --- | --- |
-| `index.html` | Pengalihan ke `login.html` |
-| `login.html`, `register.html` | Masuk dan daftar |
-| `organisasi.html` | Daftar organisasi, buat, gabung dengan kode |
-| `dashboard.html` | Saldo, ringkasan per periode, grafik 6 bulan, transaksi terakhir |
-| `transaksi.html` | Cari dan filter, lampiran nota, ekspor CSV |
-| `iuran.html` | Tagihan: tampilan kelola (Admin) dan tampilan pribadi (Anggota) |
-| `anggota.html` | Daftar anggota, peran, kode undangan |
-| `laporan.html` | Arus kas, penggunaan dana per kategori, rekap bulanan, ekspor CSV, cetak |
-| `pengaturan.html` | Saldo awal, nominal iuran, info pembayaran, kategori |
-| `owner.html` | Panel Owner/Dev: metadata organisasi saja |
-| `css/kaskita.css`, `js/kaskita.js` | Seluruh gaya dan seluruh logika |
+| `app/` | Controller, Policy, Model, middleware, `ActivityLogger` |
+| `database/` | Migrasi dan seeder |
+| `resources/views/` | Halaman Blade per modul |
+| `routes/web.php` | Rute aplikasi |
+| `tests/Feature/` | Tes per modul |
+| `docs/RIWAYAT.md` | Riwayat langkah pengembangan dan aturan bisnis rinci |
+| `CLAUDE.md` | Catatan kerja dan serah-terima antar sesi pengembangan |
+| `prototipe-statis/` | Prototipe HTML awal (arsip) |
 
-## Batasan yang perlu diketahui
+## Cabang
 
-- **Kata sandi disimpan polos di browser** dan pemeriksaan peran hanya di JavaScript. Siapa pun yang membuka DevTools bisa mengubah peran atau data. Jangan pakai sebagai aplikasi sungguhan.
-- Data tidak tersinkron antar perangkat atau browser. Menghapus data situs menghapus semua catatan.
-- Lampiran (nota, bukti bayar) hanya gambar. Gambar diperkecil ke maksimal 900 px dan disimpan di `localStorage`, yang kuotanya sekitar 5 MB.
-- Belum dikerjakan: laporan per minggu, ekspor PDF (saat ini hanya cetak lewat browser), tutup buku, riwayat aktivitas, kode undangan berbatas waktu, promosi ke Admin.
-- **Bug yang diketahui:** tombol "Isi data contoh" di organisasi yang masih kosong menimbulkan error (`seed is not defined`). Rincian dan temuan lain ada di [CLAUDE.md](CLAUDE.md), bagian "Masalah yang diketahui".
-- Belum diuji klik langsung di browser sungguhan. Pemeriksaan sejauh ini memakai simulasi DOM.
-
-## Berkas dokumentasi
-
-- [`CLAUDE.md`](CLAUDE.md): panduan teknis untuk melanjutkan pengembangan (arsitektur, model data, aturan, rencana Laravel).
-- [`KASKITA-STATUS.txt`](KASKITA-STATUS.txt): catatan status dari sesi pengembangan sebelumnya.
+- `main`: prototipe statis yang tampil di GitHub Pages.
+- `fitur/laravel-fondasi`: versi Laravel (cabang kerja).
 
 Repositori: https://github.com/AzkalGit/KasKita
