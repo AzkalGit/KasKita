@@ -41,6 +41,7 @@
         @endcan
         @can('manageSettings', $org)
             <x-side-link :href="route('categories.index', $org)" :active="request()->routeIs('categories.*')">Kategori</x-side-link>
+            <x-side-link :href="route('settings.edit', $org)" :active="request()->routeIs('settings.*')">Info pembayaran</x-side-link>
         @endcan
     @endif
 

@@ -83,7 +83,7 @@
             @if ($organization->payment_info)
                 <div class="rounded-2xl border border-line bg-white p-5">
                     <h3 class="text-base font-bold">Cara membayar</h3>
-                    <p class="mt-1">{{ $organization->payment_info }}</p>
+                    <p class="mt-1 whitespace-pre-line">{{ $organization->payment_info }}</p>
                     <p class="mt-2 text-mute">Setelah membayar, tekan "Saya sudah bayar" pada tagihanmu di bawah. Admin atau Editor akan memeriksanya.</p>
                 </div>
             @endif

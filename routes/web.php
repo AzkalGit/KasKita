@@ -6,6 +6,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationDashboardController;
+use App\Http\Controllers\OrganizationSettingController;
 use App\Http\Controllers\OwnerOrganizationController;
 use App\Http\Controllers\PeriodClosureController;
 use App\Http\Controllers\ProfileController;
@@ -67,6 +68,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/kategori', [CategoryController::class, 'store'])->name('categories.store');
             Route::patch('/kategori/{category}', [CategoryController::class, 'update'])->name('categories.update');
             Route::delete('/kategori/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+            // Pengaturan organisasi: info pembayaran iuran (khusus Admin; Policy 'manageSettings')
+            Route::get('/pengaturan', [OrganizationSettingController::class, 'edit'])->name('settings.edit');
+            Route::patch('/pengaturan', [OrganizationSettingController::class, 'update'])->name('settings.update');
 
             // Transaksi: semua anggota aktif boleh melihat; Admin/Editor mencatat dan mengubah; hanya Admin menghapus
             Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');
