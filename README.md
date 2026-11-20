@@ -171,6 +171,50 @@ php artisan test
 
 Tes memakai SQLite di memori, tanpa menyentuh database lokalmu.
 
+## Teknologi
+
+- Laravel 13, PHP 8.4.1 atau lebih baru
+- Blade dengan Tailwind CSS lewat Vite
+- MariaDB atau MySQL untuk penggunaan lokal, SQLite di memori untuk tes
+- Node.js 22
+
+## Status pengujian
+
+- Tes otomatis mencakup otorisasi, isolasi antar organisasi, iuran, laporan, tutup buku, dan keluar organisasi. Pada pembaruan terakhir 258 tes lulus terkonfirmasi; jalankan ulang untuk angka terkini.
+- Seeder dan perintah `kaskita:isi-demo` sudah berjalan di MariaDB lokal.
+- Sebagian halaman belum ditelusuri langsung di browser: tampilan layar HP, alur beberapa peran, dan ekspor CSV di Excel atau LibreOffice.
+- Panduan pemasangan Windows belum dicoba di Windows.
+
+## Keterbatasan yang diketahui
+
+- Zona waktu dan bahasa aplikasi belum diatur ke Indonesia. Tanggal pelunasan dan bulan bawaan laporan bisa meleset sehari.
+- Pencarian transaksi memperlakukan `%` dan `_` sebagai wildcard.
+- Daftar transaksi di laporan tidak dipaginasi.
+- CSV berkoma bisa terbuka dalam satu kolom di Excel berlokal Indonesia.
+- Admin tunggal yang keluar meninggalkan organisasi tanpa pengelola; Owner baru bisa menonaktifkannya.
+
+## Struktur repositori
+
+| Lokasi | Isi |
+| --- | --- |
+| `app/` | Controller, Policy, Model, middleware, `ActivityLogger` |
+| `database/` | Migrasi dan seeder |
+| `resources/views/` | Halaman Blade per modul |
+| `routes/web.php` | Rute aplikasi |
+| `tests/Feature/` | Tes per modul |
+| `docs/RIWAYAT.md` | Riwayat langkah pengembangan dan aturan bisnis rinci |
+| `CLAUDE.md` | Catatan kerja dan serah-terima antar sesi pengembangan |
+| `prototipe-statis/` | Prototipe HTML awal (arsip) |
+
+## Cabang
+
+- `main`: prototipe statis yang tampil di GitHub Pages.
+- `fitur/laravel-fondasi`: versi Laravel (cabang kerja).
+
+Repositori: https://github.com/AzkalGit/KasKita
+
+Proyek kuliah Sistem Informasi, semester 3.
+
 ## Catatan keamanan
 
 - Seeder dan `kaskita:isi-demo` memuat kata sandi tetap: **jangan dijalankan di server publik**.
