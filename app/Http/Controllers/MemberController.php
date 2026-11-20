@@ -9,12 +9,13 @@ use App\Models\OrganizationMember;
 use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class MemberController extends Controller
 {
-    public function index(Organization $organization)
+    public function index(Request $request, Organization $organization)
     {
         Gate::authorize('manageMembers', $organization);
 
@@ -23,7 +24,10 @@ class MemberController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('members.index', compact('organization', 'members'));
+        // Alasan Admin yang sedang membuka halaman ini belum boleh keluar (null = boleh)
+        $leaveBlock = $request->attributes->get('member')->leaveBlockedReason();
+
+        return view('members.index', compact('organization', 'members', 'leaveBlock'));
     }
 
     public function store(StoreMemberRequest $request, Organization $organization): RedirectResponse
@@ -66,7 +70,7 @@ class MemberController extends Controller
         return $this->done($organization, 'Data anggota diperbarui.');
     }
 
-    // Hanya Anggota <-> Editor. Peran Admin tidak bisa diberikan maupun dicabut di sini.
+    // Hanya Anggota <-> Editor. Peran Admin diberikan lewat promote(), dan Admin hanya turun lewat leave().
     public function updateRole(Request $request, Organization $organization, OrganizationMember $member): RedirectResponse
     {
         Gate::authorize('manageMembers', $organization);
@@ -97,6 +101,31 @@ class MemberController extends Controller
         ]);
 
         return $this->done($organization, "Peran {$member->name} diubah menjadi ".ucfirst($data['role']).'.');
+    }
+
+    // Admin mengangkat anggota aktif berakun (Editor/Anggota) menjadi Admin
+    public function promote(Request $request, Organization $organization, OrganizationMember $member): RedirectResponse
+    {
+        Gate::authorize('manageMembers', $organization);
+
+        if ($member->hasRole(OrganizationMember::ROLE_ADMIN)) {
+            return $this->done($organization, "{$member->name} sudah menjadi Admin.");
+        }
+
+        if (! $member->is_active || ! $member->hasAccount()) {
+            return $this->refuse($organization, 'Hanya anggota aktif yang sudah punya akun yang bisa dijadikan Admin.');
+        }
+
+        $from = $member->role;
+        $member->update(['role' => OrganizationMember::ROLE_ADMIN]);
+
+        ActivityLogger::record($organization, $request->user(), 'member.role_changed', $member, [
+            'name' => $member->name,
+            'from' => $from,
+            'to' => OrganizationMember::ROLE_ADMIN,
+        ]);
+
+        return $this->done($organization, "{$member->name} dijadikan Admin.");
     }
 
     public function deactivate(Request $request, Organization $organization, OrganizationMember $member): RedirectResponse
@@ -137,22 +166,30 @@ class MemberController extends Controller
         return $this->done($organization, "{$member->name} diaktifkan kembali.");
     }
 
-    // Keluar sendiri: boleh untuk anggota aktif mana pun, kecuali Admin (serah-terima belum ada, D5)
+    // Keluar sendiri: boleh untuk anggota aktif mana pun. Admin hanya bila aturan di
+    // OrganizationMember::leaveBlockedReason() terpenuhi. Baris organisasi dikunci agar dua
+    // Admin yang keluar bersamaan tidak sama-sama lolos.
     public function leave(Request $request, Organization $organization): RedirectResponse
     {
-        $member = $request->attributes->get('member');
+        $blocked = DB::transaction(function () use ($request, $organization) {
+            Organization::whereKey($organization->id)->lockForUpdate()->first();
 
-        abort_if(
-            $member->hasRole(OrganizationMember::ROLE_ADMIN),
-            403,
-            'Admin belum bisa keluar dari organisasi. Serahkan peran Admin terlebih dahulu.'
-        );
+            $member = $request->attributes->get('member')->fresh();
 
-        $member->deactivate();
+            if ($reason = $member->leaveBlockedReason()) {
+                return $reason;
+            }
 
-        ActivityLogger::record($organization, $request->user(), 'member.left', $member, [
-            'name' => $member->name,
-        ]);
+            $member->deactivate();
+
+            ActivityLogger::record($organization, $request->user(), 'member.left', $member, [
+                'name' => $member->name,
+            ]);
+
+            return null;
+        });
+
+        abort_if($blocked !== null, 403, (string) $blocked);
 
         return redirect()->route('organizations.index')
             ->with('status', "Kamu telah keluar dari {$organization->name}.");
@@ -170,7 +207,7 @@ class MemberController extends Controller
         }
 
         if ($member->hasRole(OrganizationMember::ROLE_ADMIN)) {
-            return 'Peran Admin tidak bisa diubah atau dinonaktifkan. Organisasi harus selalu punya Admin.';
+            return 'Peran Admin tidak bisa diubah atau dinonaktifkan. Admin hanya bisa turun dengan keluar sendiri.';
         }
 
         return null;

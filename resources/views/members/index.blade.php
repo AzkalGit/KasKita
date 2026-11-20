@@ -93,6 +93,12 @@
                                         <option value="editor" @selected($m->role === 'editor')>Editor</option>
                                     </x-select-input>
                                 </form>
+
+                                <form method="POST" action="{{ route('members.promote', [$organization, $m]) }}"
+                                      onsubmit="return confirm('Jadikan {{ $m->name }} Admin? Dia akan punya hak penuh mengelola organisasi.')">
+                                    @csrf @method('PATCH')
+                                    <button class="text-brand hover:text-brand-dark">Jadikan Admin</button>
+                                </form>
                             @endif
 
                             @if (! $m->is_active)
@@ -144,6 +150,21 @@
                     </details>
                 </div>
             @endforeach
+        </div>
+
+        {{-- Keluar dari organisasi (Admin) --}}
+        <div class="rounded-2xl border border-line bg-white p-5">
+            <h3 class="text-base font-bold">Keluar dari organisasi</h3>
+            @if ($leaveBlock)
+                <p class="mt-1 text-mute">{{ $leaveBlock }}</p>
+            @else
+                <p class="mt-1 text-mute">Kamu tidak akan melihat organisasi ini lagi. Data keuangannya tetap tersimpan.</p>
+                <form method="POST" action="{{ route('members.leave', $organization) }}" class="mt-3"
+                      onsubmit="return confirm('Keluar dari {{ $organization->name }}?')">
+                    @csrf
+                    <x-danger-button>Keluar</x-danger-button>
+                </form>
+            @endif
         </div>
     </div>
 </x-app-layout>

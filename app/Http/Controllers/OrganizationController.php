@@ -26,6 +26,9 @@ class OrganizationController extends Controller
             ->with('organization')
             ->get();
 
+        // Alasan tiap keanggotaan belum boleh keluar (null = boleh); dibaca view daftar
+        $memberships->each(fn ($m) => $m->leave_block = $m->leaveBlockedReason());
+
         return view('organizations.index', compact('memberships'));
     }
 

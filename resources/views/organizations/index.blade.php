@@ -30,8 +30,11 @@
                             <a href="{{ route('organizations.dashboard', $m->organization) }}"
                                class="rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-dark">Buka</a>
 
-                            {{-- Admin belum bisa keluar (serah-terima belum ada) --}}
-                            @if ($m->role !== 'admin')
+                            {{-- Admin yang satu-satunya Admin tapi masih ada anggota lain: angkat pengganti dulu --}}
+                            @if ($m->leave_block)
+                                <a href="{{ route('members.index', $m->organization) }}" title="{{ $m->leave_block }}"
+                                   class="text-sm font-semibold text-mute hover:text-ink">Keluar? Angkat Admin dulu</a>
+                            @else
                                 <form method="POST" action="{{ route('members.leave', $m->organization) }}"
                                       onsubmit="return confirm({{ Js::from('Keluar dari '.$m->organization->name.'?') }})">
                                     @csrf

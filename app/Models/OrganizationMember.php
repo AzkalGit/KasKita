@@ -76,6 +76,32 @@ class OrganizationMember extends Model
             && (int) $this->user_id === (int) $this->organization?->created_by;
     }
 
+    // Aturan "keluar seperti grup WA": Admin boleh keluar bila ada Admin lain yang aktif,
+    // atau bila tidak ada anggota berakun lain yang aktif. Selain itu harus mengangkat
+    // Admin pengganti dulu. Kontak tanpa akun tidak dihitung (tidak bisa jadi Admin).
+    // Mengembalikan alasan penolakan, atau null bila boleh keluar.
+    public function leaveBlockedReason(): ?string
+    {
+        if (! $this->hasRole(self::ROLE_ADMIN)) {
+            return null;
+        }
+
+        $others = self::where('organization_id', $this->organization_id)
+            ->where('is_active', true)
+            ->whereNotNull('user_id')
+            ->where('id', '!=', $this->id);
+
+        if ((clone $others)->where('role', self::ROLE_ADMIN)->exists()) {
+            return null;
+        }
+
+        if ($others->exists()) {
+            return 'Kamu satu-satunya Admin. Angkat Editor atau Anggota lain menjadi Admin dulu sebelum keluar.';
+        }
+
+        return null;
+    }
+
     // Dinonaktifkan, bukan dihapus: riwayat tagihan tetap utuh
     public function deactivate(): void
     {

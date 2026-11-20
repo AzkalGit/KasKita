@@ -298,15 +298,6 @@ class MemberManagementTest extends TestCase
         $this->assertTrue(ActivityLog::where('action', 'member.left')->exists());
     }
 
-    public function test_admin_tidak_bisa_keluar(): void
-    {
-        [$org, $admin, $adminMember] = $this->makeOrg();
-
-        $this->actingAs($admin)->post(route('members.leave', $org))->assertForbidden();
-
-        $this->assertTrue($adminMember->fresh()->is_active);
-    }
-
     public function test_bergabung_lewat_kode_dicatat_di_riwayat(): void
     {
         [$org, $admin] = $this->makeOrg();

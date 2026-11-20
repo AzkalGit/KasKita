@@ -60,6 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/anggota/keluar', [MemberController::class, 'leave'])->name('members.leave');
             Route::patch('/anggota/{member}', [MemberController::class, 'update'])->name('members.update');
             Route::patch('/anggota/{member}/peran', [MemberController::class, 'updateRole'])->name('members.role');
+            Route::patch('/anggota/{member}/jadikan-admin', [MemberController::class, 'promote'])->name('members.promote');
             Route::patch('/anggota/{member}/nonaktifkan', [MemberController::class, 'deactivate'])->name('members.deactivate');
             Route::patch('/anggota/{member}/aktifkan', [MemberController::class, 'reactivate'])->name('members.reactivate');
 
