@@ -28,21 +28,22 @@ Aturan:
 14. **Jangan menempel kode ke terminal** (tanda `=>` membuat berkas sampah bernama `,`, `-`, dll.). Kode disalin lewat editor. Bila terjadi: `git clean -n` lalu `git clean -f` dengan `-e` untuk berkas yang dipertahankan.
 15. **Halaman login/layout tamu tidak boleh menampilkan akun atau kata sandi demo.** Daftar akun demo ada di catatan pribadi pemilik di luar repo.
 16. **Tes yang mengganti `$this->app['env']`** mengaktifkan lagi pemeriksaan CSRF: kirim `withSession(['_token' => ...])` dan `_token` sendiri (lihat `RegistrationTest`).
+17. **Berbagi proyek ke orang lain:** lewat GitHub atau `git archive`, tidak pernah menyalin folder mentah. Pendaftaran tanpa verifikasi di lokal berasal dari `APP_ENV=local`, bukan tinker.
 
 **Prompt serah-terima** (tempel bersama berkas ini ke percakapan baru):
 
-> Baca `CLAUDE.md` terlampir. Lanjutkan dari bagian 9 ("Langkah J: README sebagai panduan"). Ikuti bagian 0. Minta aku menjalankan `git status --short`, `ls`, dan `cat README.md`. **Mulai dengan diskusi denganku soal isi dan bentuk README (satu pertanyaan, dengan default), jangan langsung menulis.** Tulis berkas per file di chat (tanpa zip), hemat token. Setelah selesai, beri tambahan `docs/RIWAYAT.md` dan `CLAUDE.md` baru sebagai teks di chat.
+> Baca `CLAUDE.md` terlampir. Lanjutkan dari bagian 9 ("Langkah I (sisa): peninjauan dan penutup"). Ikuti bagian 0. Minta aku menjalankan `git status --short`, `ls`, dan `git log --oneline -3`. **Mulai dengan satu pertanyaan (dengan default) soal bagian Langkah I mana yang dikerjakan lebih dulu; jangan langsung menulis kode.** Tulis berkas per file di chat (tanpa zip), hemat token. Setelah selesai, beri tambahan `docs/RIWAYAT.md` dan `CLAUDE.md` baru sebagai teks di chat.
 
 ## 1. Ringkasan, stack, repo
 
 - **Apa:** aplikasi kas organisasi (iuran, donasi, pengeluaran). Satu akun bisa ikut banyak organisasi; peran (Admin, Editor, Anggota) **per organisasi**; Owner/Dev = peran **platform** (`users.platform_role = 'owner'`), terpisah dari organisasi (D17).
 - **Stack:** Laravel 13.x, PHP ≥ 8.4.1, Breeze (Blade + Tailwind via Vite), `MAIL_MAILER=log`, `SESSION_DRIVER=database`. Tes pakai SQLite di memori.
-- **Lingkungan pemilik:** Linux Mint, PHP 8.4, MariaDB 10.11 (db `kaskita`, user `kaskita_user`), Node 22 (nvm). Dua terminal: `npm run dev` dan `php artisan serve` (`http://127.0.0.1:8000`). Periksa DB dengan `php artisan db:show`, `db:table <tabel>`, `tinker`.
+- **Lingkungan pemilik:** Linux Mint, PHP 8.4, MariaDB 10.11 (db `kaskita`, user `kaskita_user`), Node 22 (nvm). Dua terminal: `npm run dev` dan `php artisan serve` (`http://127.0.0.1:8000`). Periksa DB dengan `php artisan db:show`, `db:table <tabel>`, `tinker`. Seorang teman akan memasang di **Windows** (Laragon) lewat clone GitHub; belum dicoba.
 - **Repo:** `https://github.com/AzkalGit/KasKita`, folder `~/Documents/Kuliah/sem3/SI/KasKita` (Laravel di akar). Branch `main` = prototipe statis (GitHub Pages), **jangan disentuh**. Kerja di **`fitur/laravel-fondasi`**. Prototipe lama di `prototipe-statis/`. Sebelum `git add -A`, cek `git status` (jangan sampai `.env` ikut).
 
 ```bash
 composer install
-cp .env.example .env && php artisan key:generate     # isi DB_*
+cp .env.example .env && php artisan key:generate     # isi DB_*; pastikan APP_ENV=local
 php artisan migrate:fresh --seed                     # MENGHAPUS isi DB lokal; 1 Owner + 3 akun utama + 4 organisasi
 php artisan kaskita:isi-demo                         # +24 akun demo, tagihan, transaksi (hanya local/testing)
 npm install && npm run dev
@@ -91,6 +92,7 @@ database/seeders/       DatabaseSeeder (Owner + DemoOrganization), OwnerSeeder, 
 resources/views/        organizations, invitations, members, categories, transactions, invoices, reports, owner/organizations, profile, auth, vendor/pagination, layouts (app, guest, sidebar, topbar), components
 routes/web.php          rute aplikasi
 tests/Feature/          satu berkas per modul (+ AdminLeaveTest, OrganizationLeaveButtonTest, IsiDemoCommandTest, LoginPageTest, ExampleTest = tes redirect `/`)
+README.md               panduan pemakai + pemasangan (Langkah J)
 ```
 
 ## 4. Skema (ringkas)
@@ -139,10 +141,11 @@ tests/Feature/          satu berkas per modul (+ AdminLeaveTest, OrganizationLea
 - **Panel Owner (G, `/owner/organisasi/daftar`):** hanya metadata organisasi (menandai organisasi tanpa Admin aktif); nonaktifkan/aktifkan dengan log; organisasi nonaktif = 403 bagi anggotanya.
 - **Tampilan (H):** token dan komponen KasKita di semua halaman.
 - **Data demo (I-0):** lihat bagian 7.
+- **README (J):** panduan pemakai satu berkas + pemasangan lokal Linux/Windows.
 
 ## 7. Data demo dan pengujian
 
-**Akun dan kata sandi demo TIDAK ditampilkan di aplikasi dan tidak ditulis di berkas ini.** Pemilik menyimpannya di `~/catatan-akun-demo.txt` (di luar repo). Kata sandi lemah, hanya untuk komputer lokal; jangan `db:seed` di server publik.
+**Akun dan kata sandi demo TIDAK ditampilkan di aplikasi dan tidak ditulis di berkas ini.** Pemilik menyimpannya di `~/catatan-akun-demo.txt` (di luar repo) dan mengirimnya ke teman lewat pesan pribadi. Kata sandi lemah, hanya untuk komputer lokal; jangan `db:seed` di server publik.
 
 `php artisan migrate:fresh --seed` membuat 4 akun utama dan 4 organisasi:
 
@@ -159,7 +162,7 @@ Organisasi: **HMMI**, **HMMI Divisi Kewirausahaan**, **BEM**, **Komunitas Freela
 
 **Tes** memakai `TestOrganizationSeeder` (fixture khusus tes: organisasi "BEM Fakultas Teknologi", kode `BEM26KAS`, akun `*.kaskita.demo`, kata sandi `KitaDemo2026!`; **jangan dipakai untuk data demo**).
 
-**Pengujian:** 258 tes lulus terkonfirmasi (SQLite di memori); 3 tes `OrganizationLeaveButtonTest` ditambahkan sesudahnya dan pemilik melaporkan "sudah bisa" tanpa angka. Seeder dan `kaskita:isi-demo` sudah berjalan di MariaDB lokal. **Browser:** pemilik sudah mencoba login, daftar, Dashboard, Transaksi (versi sebelum I-1), hamburger, Panel Owner (daftar), sebagian E2, dan melaporkan fitur Admin keluar/promosi "sudah bisa". **Belum dikonfirmasi rinci di browser:** tampilan filter Transaksi baru (I-1), alur login 4 akun utama per organisasi, tampilan Iuran/Laporan (+Tutup buku)/Kategori/Undangan/Organisasi/Profil/Panel Owner baru, halaman auth baru, paginasi, alur E3, CSV (belum dibuka di Excel/LibreOffice). **Uji mutasi:** hanya E1 satu kali; I-3 (`promote`) belum. **Balapan dua Admin keluar bersamaan** (`lockForUpdate`) tidak teruji di SQLite.
+**Pengujian:** 258 tes lulus terkonfirmasi (SQLite di memori); 3 tes `OrganizationLeaveButtonTest` ditambahkan sesudahnya dan pemilik melaporkan "sudah bisa" tanpa angka. Seeder dan `kaskita:isi-demo` sudah berjalan di MariaDB lokal. **Browser:** pemilik sudah mencoba login, daftar, Dashboard, Transaksi (versi sebelum I-1), hamburger, Panel Owner (daftar), sebagian E2, dan melaporkan fitur Admin keluar/promosi "sudah bisa". **Belum dikonfirmasi rinci di browser:** tampilan filter Transaksi baru (I-1), alur login 4 akun utama per organisasi, tampilan Iuran/Laporan (+Tutup buku)/Kategori/Undangan/Organisasi/Profil/Panel Owner baru, halaman auth baru, paginasi, alur E3, CSV (belum dibuka di Excel/LibreOffice). **Uji mutasi:** hanya E1 satu kali; I-3 (`promote`) belum. **Balapan dua Admin keluar bersamaan** (`lockForUpdate`) tidak teruji di SQLite. **README (J):** belum diuji; hanya dibaca ulang pemilik; perintah Windows belum dicoba di Windows; README lama diganti utuh tanpa dilihat Claude.
 
 ## 8. Keputusan aktif dan masalah terbuka
 
@@ -174,6 +177,7 @@ Organisasi: **HMMI**, **HMMI Divisi Kewirausahaan**, **BEM**, **Komunitas Freela
 - **D16** Tanpa enkripsi end-to-end. **D17** Owner platform terpisah dari peran organisasi.
 - **D18** Akun/kata sandi demo tidak ditampilkan di UI; dicatat pemilik di luar repo.
 - **D19** Verifikasi email otomatis hanya di `local` (I-2).
+- **D20** README satu berkas, pembaca utama calon pemakai non-teknis, tanpa tangkapan layar dan tanpa akun demo (J).
 
 **Masalah terbuka yang relevan:**
 - **Organisasi tanpa Admin:** Admin tunggal yang keluar sendirian meninggalkan organisasi tanpa pengelola; Owner hanya bisa menonaktifkannya. Orang yang sudah keluar juga tidak bisa gabung ulang lewat kode (hanya Admin yang bisa mengaktifkan). Usul: Owner boleh menunjuk Admin (keputusan terpisah).
@@ -189,31 +193,16 @@ Organisasi: **HMMI**, **HMMI Divisi Kewirausahaan**, **BEM**, **Komunitas Freela
 - Non-anggota mendapat 403 untuk organisasi yang ada dan 404 untuk yang tidak ada (usul: 404 keduanya).
 - Bila Admin menambahkan email Owner sebagai kontak, akun Owner bisa tertaut saat verifikasi (celah kecil, dibiarkan).
 - Seeder dan `IsiDemo` memuat kata sandi tetap di kode: jangan dijalankan di server sungguhan.
-- `README.md` basi (dikerjakan di Langkah J); `.env` pernah tertempel di percakapan (saran: `php artisan key:generate`, ganti kata sandi DB).
+- `.env.example`: isi `APP_ENV` belum diperiksa (README menyuruh pemasang memastikan `APP_ENV=local`); pertimbangkan membuatnya `local` bila ternyata bukan.
+- `.env` pernah tertempel di percakapan (saran: `php artisan key:generate`, ganti kata sandi DB).
 
 ## 9. Langkah berikutnya (satu langkah per percakapan)
 
-**Selesai:** A-H, I-0, I-1, I-2 (verifikasi otomatis di `local`), I-3 (Admin keluar + jadikan Admin + tombol Keluar di daftar organisasi). Pastikan commit sudah dilakukan (`git log --oneline -3`, `git status --short`).
+**Selesai:** A-H, I-0, I-1, I-2 (verifikasi otomatis di `local`), I-3 (Admin keluar + jadikan Admin + tombol Keluar di daftar organisasi), **J (README panduan)**. Pastikan commit sudah dilakukan (`git log --oneline -3`, `git status --short`).
 
-### Langkah J — README sebagai panduan pemakai (berikutnya)
-
-**Permintaan pemilik:** perbarui penjelasan di `README.md` agar mudah dipahami **calon pemakai** dan memperlihatkan **alur keseluruhan**, seperti sebuah *guide*.
-
-**Mulai dengan DISKUSI, bukan menulis:**
-1. Minta pemilik menjalankan `git status --short`, `ls`, `ls docs`, `cat README.md`. Jangan menimpa README sebelum melihat isinya (aturan 2).
-2. **Ajukan satu pertanyaan** (aturan 11). Pertanyaan: *siapa pembaca utamanya?* Default aman: **calon pemakai non-teknis** (pengurus dan anggota organisasi), dengan bagian pemasangan lokal untuk developer/penguji di bagian bawah.
-3. Sebutkan sisanya sebagai asumsi default dan minta pemilik mengoreksi sekaligus:
-   - **Kerangka usulan:** (a) apa itu KasKita dan untuk siapa; (b) tiga peran dan tabel "siapa boleh apa" (bagian 5); (c) **alur dari awal sampai akhir**: daftar → buat atau gabung organisasi (kode undangan) → atur kategori dan info pembayaran → tambah anggota/kontak → buat tagihan iuran bulanan → anggota bayar dan unggah bukti → Admin/Editor verifikasi → transaksi tercatat otomatis → laporan dan unduh CSV → tutup buku → keluar atau serah-terima Admin; (d) tanya-jawab singkat (mis. kenapa email harus diverifikasi, kenapa tagihan sendiri dilunasi orang lain, apa itu tutup buku); (e) cara memasang dan menjalankan secara lokal; (f) catatan "belum tersedia".
-   - **Satu berkas:** semuanya di `README.md`, bagian pemakai dulu, pemasangan di bawah (bukan berkas panduan terpisah).
-   - **Tanpa tangkapan layar** (Claude tidak bisa membuatnya); beri penanda tempat gambar bila pemilik ingin menambah sendiri.
-   - **Tanpa akun atau kata sandi demo** (D18, aturan 15).
-   - **Hanya fitur yang benar-benar ada** (bagian 6). Yang belum ada (nota transaksi, hapus organisasi oleh Admin, Owner menunjuk Admin) ditulis jelas sebagai belum tersedia atau tidak ditulis.
-4. **Akurasi:** cocokkan isi dengan bagian 5-6 dan rute sebenarnya; minta `php artisan route:list` bila ragu. README tidak punya tes, jadi catat "belum diuji; hanya dibaca ulang pemilik".
-5. **Perhatian cabang:** README ditulis di `fitur/laravel-fondasi`. Branch `main` = prototipe statis di GitHub Pages dan jangan disentuh; saat PR nanti perhatikan README di `main` berbeda.
-6. Serah README sebagai **file utuh** di chat (aturan 3), lalu `docs/RIWAYAT.md` + `CLAUDE.md` baru + perintah commit.
-
-### Langkah I (sisa) — Peninjauan dan penutup (sesudah J)
-1. **Telusur browser** halaman yang belum dicoba (bagian 7) per peran (login ke-4 akun utama, pindah organisasi), termasuk layar HP. Laporkan yang janggal per halaman.
+### Langkah I (sisa) — Peninjauan dan penutup (berikutnya)
+Mulai dengan **satu pertanyaan** (aturan 11) soal urutan; default: mulai dari nomor 1 (karena teman akan mencoba di Windows, laporan masalah mereka juga masuk sini).
+1. **Telusur browser** halaman yang belum dicoba (bagian 7) per peran (login ke-4 akun utama, pindah organisasi), termasuk layar HP. Laporkan yang janggal per halaman. Sertakan masukan dari teman (Windows).
 2. Kecilkan sisa tampilan: ikon sidebar, seragamkan input Login (`x-text-input`).
 3. Perbaiki `q` wildcard (kecil, ada tes), lalu pertimbangkan filter tambahan Transaksi dan nota (D10).
-4. **Terakhir:** atur D8 (locale/timezone), syarat lingkungan seeder, uji di MariaDB, uji mutasi otorisasi F2, `EnsureOwner`, dan `promote`, putuskan soal organisasi tanpa Admin, Pull Request ke `main` (perhatikan GitHub Pages), tinjau masalah terbuka.
+4. **Terakhir:** atur D8 (locale/timezone), syarat lingkungan seeder, periksa `.env.example`, uji di MariaDB, uji mutasi otorisasi F2, `EnsureOwner`, dan `promote`, putuskan soal organisasi tanpa Admin, Pull Request ke `main` (perhatikan GitHub Pages dan README di `main` yang berbeda), tinjau masalah terbuka.
