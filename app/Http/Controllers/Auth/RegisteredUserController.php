@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,8 +40,17 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Penautan ke data anggota (kontak) yang emailnya sama TIDAK dilakukan di sini.
-        // Itu baru terjadi setelah email diverifikasi: lihat App\Listeners\LinkPendingMemberships.
+        // HANYA di lingkungan lokal: email langsung dianggap terverifikasi supaya
+        // pengembangan tidak ribet (MAIL_MAILER=log tidak mengirim email sungguhan).
+        // Event Verified dipicu agar kontak anggota yang emailnya sama tetap tertaut
+        // (App\Listeners\LinkPendingMemberships). Di lingkungan lain verifikasi tetap wajib.
+        if (app()->environment('local')) {
+            $user->markEmailAsVerified();
+            event(new Verified($user));
+        }
+
+        // Penautan ke data anggota (kontak) yang emailnya sama TIDAK dilakukan di sini
+        // untuk lingkungan non-lokal. Itu baru terjadi setelah email diverifikasi.
 
         event(new Registered($user));
 
