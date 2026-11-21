@@ -23,6 +23,14 @@
                                 · <span class="text-expense">nonaktif</span>
                             @endunless
                         </div>
+
+                        {{-- Admin tunggal yang masih punya anggota lain: petunjuk di bawah peran, bukan di kolom aksi --}}
+                        @if ($m->organization->isActive() && $m->leave_block)
+                            <div class="mt-0.5 text-xs text-mute">
+                                <a href="{{ route('members.index', $m->organization) }}" title="{{ $m->leave_block }}"
+                                   class="underline hover:text-ink">Angkat Admin dulu supaya bisa keluar</a>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="flex items-center gap-4">
@@ -30,17 +38,19 @@
                             <a href="{{ route('organizations.dashboard', $m->organization) }}"
                                class="rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-dark">Buka</a>
 
-                            {{-- Admin yang satu-satunya Admin tapi masih ada anggota lain: angkat pengganti dulu --}}
-                            @if ($m->leave_block)
-                                <a href="{{ route('members.index', $m->organization) }}" title="{{ $m->leave_block }}"
-                                   class="text-sm font-semibold text-mute hover:text-ink">Keluar? Angkat Admin dulu</a>
-                            @else
-                                <form method="POST" action="{{ route('members.leave', $m->organization) }}"
-                                      onsubmit="return confirm({{ Js::from('Keluar dari '.$m->organization->name.'?') }})">
-                                    @csrf
-                                    <button class="text-sm font-semibold text-expense hover:opacity-80">Keluar</button>
-                                </form>
-                            @endif
+                            {{-- Slot lebar tetap supaya tombol Buka selalu sejajar antarbaris --}}
+                            <div class="w-16 text-right">
+                                @if ($m->leave_block)
+                                    <span class="cursor-not-allowed text-sm font-semibold text-mute/50"
+                                          title="{{ $m->leave_block }}">Keluar</span>
+                                @else
+                                    <form method="POST" action="{{ route('members.leave', $m->organization) }}"
+                                          onsubmit="return confirm({{ Js::from('Keluar dari '.$m->organization->name.'?') }})">
+                                        @csrf
+                                        <button class="text-sm font-semibold text-expense hover:opacity-80">Keluar</button>
+                                    </form>
+                                @endif
+                            </div>
                         @else
                             <x-badge tone="gray">Nonaktif</x-badge>
                         @endif
